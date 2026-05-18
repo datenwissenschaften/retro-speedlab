@@ -32,6 +32,7 @@ Configure your local environment by copying `.env.example` to `.env`. The follow
 - `RETRO_ARENA_MODEL_DIR`: Directory for saving models.
 - `RETRO_ARENA_RECORDING_DIR`: Directory for saving training recordings.
 - `RETRO_ARENA_ROM_PATH`: Path to the directory containing ROMs.
+- `RETRO_ARENA_API_KEY`: API key for the Retro Arena platform (get yours at [arena.datenwissenschaften.com](https://arena.datenwissenschaften.com)).
 
 ## Project Layout
 

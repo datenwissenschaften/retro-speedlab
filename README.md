@@ -36,7 +36,7 @@ Cookiecutter will ask for values such as the project name, description, author, 
 Your new project will include:
 
 - `app.py` as the training entry point
-- `.env.example` with the expected local runtime settings
+- `.env.example` with the expected local runtime settings (including the API key from [arena.datenwissenschaften.com](https://arena.datenwissenschaften.com))
 - `game/` for the Gymnasium wrapper and game-specific reward logic
 - `model/` for the Stable-Baselines3 model builder
 - `pyproject.toml` with Cookiecutter-rendered project metadata
