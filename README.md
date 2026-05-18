@@ -2,7 +2,7 @@
 
 Start a retro reinforcement-learning project without rebuilding the boring parts.
 
-This Cookiecutter template gives you a ready-to-hack training workspace with a Gymnasium wrapper, a Stable-Baselines3 PPO model factory, Black/Ruff configuration, and project metadata wired through `pyproject.toml`.
+This Cookiecutter template gives you a ready-to-hack training workspace with [stable-retro](https://stable-retro.farama.org/), a Gymnasium wrapper, a Stable-Baselines3 PPO model factory, Black/Ruff configuration, and project metadata wired through `pyproject.toml`.
 
 ## Why Use This Template?
 
@@ -51,6 +51,13 @@ poetry run python app.py
 ```
 
 Or use your preferred virtual environment manager with the dependencies listed in `pyproject.toml`.
+
+## ROMs
+
+Generated projects use [stable-retro](https://stable-retro.farama.org/) to interface with classic games. Users must provide their own legally obtained ROMs to run experiments.
+
+- Refer to the [stable-retro documentation](https://stable-retro.farama.org/getting_started/#importing-roms) to learn how to get your ROMs working.
+- We do not favor piracy; only do what is correct by law.
 
 ## Template Variables
 

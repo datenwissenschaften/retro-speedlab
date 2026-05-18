@@ -2,7 +2,7 @@
 
 {{ cookiecutter.description }}
 
-This project trains a retro-game reinforcement-learning agent with Gymnasium and Stable-Baselines3. The starter layout keeps game logic, model construction, and the training entry point separate so experiments stay easy to change.
+This project trains a retro-game reinforcement-learning agent with [stable-retro](https://stable-retro.farama.org/), Gymnasium, and Stable-Baselines3. The starter layout keeps game logic, model construction, and the training entry point separate so experiments stay easy to change.
 
 ## Setup
 
@@ -12,6 +12,14 @@ Create a local environment file and install the dependencies:
 cp .env.example .env
 poetry install
 ```
+
+## ROMs
+
+This project requires game ROMs to function. You must provide your own legally obtained ROMs. 
+
+- Place your ROMs in the `roms/` directory (or the path configured via `RETRO_ARENA_ROM_PATH`).
+- For instructions on how to get ROMs working, refer to the [stable-retro documentation](https://stable-retro.farama.org/getting_started/#importing-roms).
+- **Disclaimer:** We do not favor piracy. Please only use ROMs that you have the legal right to use according to your local laws.
 
 ## Run
 
@@ -27,7 +35,7 @@ Configure your local environment by copying `.env.example` to `.env`. The follow
 
 - `RETRO_ARENA_TIMESTEPS`: Total number of training timesteps.
 - `RETRO_ARENA_NUM_ENVS`: Number of parallel environments for training.
-- `RETRO_ARENA_GAME_ID`: Gymnasium-Retro game ID (e.g., `SuperMarioWorld-Snes-v0`).
+- `RETRO_ARENA_GAME_ID`: stable-retro game ID (e.g., `SuperMarioWorld-Snes-v0`).
 - `RETRO_ARENA_SAVESTATE`: Name of the savestate to start from.
 - `RETRO_ARENA_MODEL_DIR`: Directory for saving models.
 - `RETRO_ARENA_RECORDING_DIR`: Directory for saving training recordings.
