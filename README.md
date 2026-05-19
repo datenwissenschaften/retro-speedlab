@@ -1,4 +1,4 @@
-# Retro Arena Cookiecutter
+# Retro Speedlab Cookiecutter
 
 Start a retro reinforcement-learning project without rebuilding the boring parts.
 
@@ -26,7 +26,7 @@ pipx install cookiecutter
 Generate a new project from this repository:
 
 ```bash
-cookiecutter https://github.com/datenwissenschaften/retro-arena
+cookiecutter https://github.com/datenwissenschaften/retro-speedlab
 ```
 
 Cookiecutter will ask for values such as the project name, description, author, license, and Python target. Those answers are rendered into the generated `pyproject.toml`.
@@ -36,7 +36,7 @@ Cookiecutter will ask for values such as the project name, description, author, 
 Your new project will include:
 
 - `app.py` as the training entry point
-- `.env.example` with the expected local runtime settings (including the API key from [arena.datenwissenschaften.com](https://arena.datenwissenschaften.com))
+- `.env.example` with the expected local runtime settings (including the API key from [speedlab.datenwissenschaften.com](https://speedlab.datenwissenschaften.com))
 - `game/` for the Gymnasium wrapper and game-specific reward logic
 - `model/` for the Stable-Baselines3 model builder
 - `pyproject.toml` with Cookiecutter-rendered project metadata

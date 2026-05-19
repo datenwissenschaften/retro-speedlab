@@ -17,7 +17,7 @@ poetry install
 
 This project requires game ROMs to function. You must provide your own legally obtained ROMs. 
 
-- Place your ROMs in the `roms/` directory (or the path configured via `RETRO_ARENA_ROM_PATH`).
+- Place your ROMs in the `roms/` directory (or the path configured via `RETRO_SPEEDLAB_ROM_PATH`).
 - For instructions on how to get ROMs working, refer to the [stable-retro documentation](https://stable-retro.farama.org/getting_started/#importing-roms).
 - **Disclaimer:** We do not favor piracy. Please only use ROMs that you have the legal right to use according to your local laws.
 
@@ -33,14 +33,14 @@ Use the platform launcher (which also installs dependencies and initializes the 
 
 Configure your local environment by copying `.env.example` to `.env`. The following variables control the training process:
 
-- `RETRO_ARENA_TIMESTEPS`: Total number of training timesteps.
-- `RETRO_ARENA_NUM_ENVS`: Number of parallel environments for training.
-- `RETRO_ARENA_GAME_ID`: stable-retro game ID (e.g., `SuperMarioWorld-Snes-v0`).
-- `RETRO_ARENA_SAVESTATE`: Name of the savestate to start from.
-- `RETRO_ARENA_MODEL_DIR`: Directory for saving models.
-- `RETRO_ARENA_RECORDING_DIR`: Directory for saving training recordings.
-- `RETRO_ARENA_ROM_PATH`: Path to the directory containing ROMs.
-- `RETRO_ARENA_API_KEY`: API key for the Retro Arena platform (get yours at [arena.datenwissenschaften.com](https://arena.datenwissenschaften.com)).
+- `RETRO_SPEEDLAB_TIMESTEPS`: Total number of training timesteps.
+- `RETRO_SPEEDLAB_NUM_ENVS`: Number of parallel environments for training.
+- `RETRO_SPEEDLAB_GAME_ID`: stable-retro game ID (e.g., `SuperMarioWorld-Snes-v0`).
+- `RETRO_SPEEDLAB_SAVESTATE`: Name of the savestate to start from.
+- `RETRO_SPEEDLAB_MODEL_DIR`: Directory for saving models.
+- `RETRO_SPEEDLAB_RECORDING_DIR`: Directory for saving training recordings.
+- `RETRO_SPEEDLAB_ROM_PATH`: Path to the directory containing ROMs.
+- `RETRO_SPEEDLAB_API_KEY`: API key for the Retro Speedlab platform (get yours at [speedlab.datenwissenschaften.com](https://speedlab.datenwissenschaften.com)).
 
 ## Project Layout
 
