@@ -78,7 +78,7 @@ class GymWrapper(gym.Wrapper):
                 "won": won,
                 "dead": dead,
                 "stale": stale,
-                "max_x": self.max_x,
+                "progress": self.max_x,
             }
         )
 
