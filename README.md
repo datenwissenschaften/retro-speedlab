@@ -2,6 +2,8 @@
 
 Start a retro reinforcement-learning project without rebuilding the boring parts.
 
+![Retro Speedlab Cookiecutter Demo](docs/retro-speedlab-cookiecutter.gif)
+
 This Cookiecutter template generates a ready-to-hack training workspace for retro game AI experiments using:
 
 * Stable Retro
