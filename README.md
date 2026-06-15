@@ -284,25 +284,13 @@ Benchmarks become meaningful only when the setup is visible.
 
 ---
 
-## Related Links
+## Learn More
 
-Retro Speedlab:
-
-```text
-https://speedlab.datenwissenschaften.com/
-```
-
-Medium article:
-
-```text
-https://medium.com/@datenwissenschaften/retro-reinforcement-learning-cookiecutter-e3aa22b258dd
-```
-
-Benchmarking article:
-
-```text
-https://medium.com/@datenwissenschaften/benchmarking-ai-speedrunners-78fab55700eb
-```
+| Resource | Description |
+|-----------|-------------|
+| 🌐 **[Retro Speedlab](https://speedlab.datenwissenschaften.com/?utm_source=github&utm_medium=readme&utm_campaign=retro_speedlab)** | Explore AI speedrunning records and benchmarks |
+| 📖 **[Benchmarking AI Speedrunners](https://medium.com/@datenwissenschaften/benchmarking-ai-speedrunners-78fab55700eb?utm_source=github&utm_medium=readme&utm_campaign=benchmarking_article)** | Why AI speedrunning needs benchmarks |
+| 📖 **[Retro RL Cookiecutter](https://medium.com/@datenwissenschaften/retro-reinforcement-learning-cookiecutter-e3aa22b258dd?utm_source=github&utm_medium=readme&utm_campaign=cookiecutter_article)** | Start a Stable-Retro + Gymnasium + PPO project in minutes |
 
 ---
 
