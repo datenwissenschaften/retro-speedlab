@@ -1,301 +1,94 @@
 # Retro Speedlab Cookiecutter
 
-Start a retro reinforcement-learning project without rebuilding the boring parts.
+Generate a complete retro reinforcement-learning project built around Stable
+Retro and the `datenwissenschaften` training toolkit.
 
 ![Retro Speedlab Cookiecutter Demo](docs/retro-speedlab-cookiecutter.gif)
 
-This Cookiecutter template generates a ready-to-hack training workspace for retro game AI experiments using:
+The generated project includes:
 
-* Stable Retro
-* Gymnasium
-* Stable-Baselines3 PPO
-* Poetry
-* Black
-* Ruff
-* Project metadata via `pyproject.toml`
+- a runnable `Airstriker-Genesis-v0` example
+- YAML-based paths and training configuration
+- a state-machine Gymnasium wrapper
+- typed RAM decoding and reward shaping
+- a reduced discrete action space
+- recurrent PPO with random network distillation
+- local training telemetry and controls
+- Poetry, Black, Ruff, and pre-commit configuration
 
-The goal is simple:
+## Quick start
 
-**Spend less time setting up infrastructure and more time training agents, shaping rewards, inspecting RAM, and competing on Retro Speedlab.**
-
----
-
-## Quick Start
-
-Install Cookiecutter:
+Install Cookiecutter and generate a project:
 
 ```bash
 pipx install cookiecutter
-```
-
-Generate a new retro RL project:
-
-```bash
-cookiecutter https://github.com/datenwissenschaften/retro-speedlab
-```
-
-Enter the generated project:
-
-```bash
+cookiecutter https://github.com/datenwissenschaften/retro-arena
 cd your-project-name
-```
-
-Create your local environment file:
-
-```bash
-cp .env.example .env
-```
-
-Install dependencies:
-
-```bash
 poetry install
-```
-
-Run training:
-
-```bash
 poetry run python app.py
 ```
 
----
+The generated Airstriker example uses the redistributable game and `Level1`
+savestate shipped with Stable Retro. A commercial ROM is not required for the
+first run.
 
-## Why This Exists
-
-Every retro reinforcement-learning project starts with excitement.
-
-You pick a game.
-You define a reward function.
-You imagine the agent discovering faster routes than humans would try.
-
-Then reality hits.
-
-Before training a single frame, you rebuild the same setup again:
-
-* Stable Retro integration
-* Gymnasium wrappers
-* observation preprocessing
-* PPO defaults
-* project metadata
-* formatting tools
-* environment configuration
-
-This template packages those repetitive decisions so each new project starts from a clean, reproducible foundation.
-
-The generated project is intentionally small. It is meant to be forked, modified, extended, and argued with.
-
----
-
-## Generated Project Structure
-
-A generated project looks like this:
+## Generated structure
 
 ```text
 your-project/
 ├── app.py
-├── .env.example
+├── config.yaml
 ├── pyproject.toml
-├── .pre-commit-config.yaml
-├── game/
-│   ├── __init__.py
-│   └── environment.py
-└── model/
-    ├── __init__.py
-    └── ppo.py
+├── roms/
+└── src/
+    ├── game/
+    │   ├── actions.py
+    │   └── wrapper.py
+    ├── ram/
+    │   └── airstriker.py
+    └── states/
+        └── survive.py
 ```
 
-### `app.py`
-
-Main training entry point.
-
-This is where the environment and model are connected.
-
-### `game/`
-
-Game-specific logic.
-
-Use this folder for:
-
-* Gymnasium wrapper code
-* reward shaping
-* RAM inspection
-* termination conditions
-* observation preprocessing
-* game-state extraction
-
-### `model/`
-
-Model construction logic.
-
-The default setup provides a Stable-Baselines3 PPO factory that can be changed as your experiment evolves.
-
-### `.env.example`
-
-Local runtime configuration.
-
-This includes expected settings such as the API key for Retro Speedlab.
-
-### `pyproject.toml`
-
-Project metadata and dependency configuration rendered from your Cookiecutter answers.
-
-### `.pre-commit-config.yaml`
-
-Formatting and quality hooks using Black and Ruff.
-
----
-
-## What You Should Customize
-
-The generated project is only a starting point.
-
-The interesting work happens here:
-
-* choosing the game and state
-* defining rewards
-* reading RAM values
-* designing termination conditions
-* tuning PPO parameters
-* testing different observation spaces
-* recording videos
-* publishing benchmark results
-
-Good retro RL projects make their assumptions visible.
-
-When publishing your project, document:
-
-* ROM/game version
-* emulator state
-* reward function
-* RAM addresses
-* model changes
-* training budget
-* videos or score curves
-* failed experiments
-
-Failed runs with clear notes are useful too.
-
----
-
-## Retro Speedlab
-
-This template is part of the Retro Speedlab ecosystem.
-
-Retro Speedlab is a platform for benchmarking AI speedrunners in retro games.
-
-The long-term goal is to make retro reinforcement-learning experiments:
-
-* easier to reproduce
-* easier to compare
-* easier to publish
-* easier to compete with
-
-Website:
-
-```text
-https://speedlab.datenwissenschaften.com/
-```
-
----
-
-## ROMs
-
-Generated projects use Stable Retro to interface with classic games.
-
-You must provide your own legally obtained ROMs.
-
-This project does not include ROMs and does not encourage piracy.
-
-Only use ROMs in a way that is correct under applicable law.
-
-Refer to the Stable Retro documentation for importing and configuring games.
-
----
-
-## Template Variables
-
-Cookiecutter asks for values such as:
-
-| Variable             | Purpose                                   |
-| -------------------- | ----------------------------------------- |
-| `project_name`       | Human-readable project name               |
-| `project_slug`       | Package/distribution slug                 |
-| `version`            | Initial project version                   |
-| `description`        | Project summary                           |
-| `author_name`        | Author name                               |
-| `author_email`       | Author email                              |
-| `license`            | SPDX license expression                   |
-| `python_requires`    | Python version range                      |
-| `python_classifier`  | Python classifier version                 |
-| `python_target`      | Black/Ruff target, for example `py312`    |
-| `development_status` | PyPI development-status classifier suffix |
-
-These values are rendered into the generated `pyproject.toml`.
-
----
-
-## Example Workflow
-
-A typical workflow looks like this:
-
-```bash
-cookiecutter https://github.com/datenwissenschaften/retro-speedlab
-
-cd my-retro-agent
-
-cp .env.example .env
-
-poetry install
-
-poetry run python app.py
-```
-
-Then iterate on:
-
-```text
-game/environment.py
-model/ppo.py
-app.py
-```
-
----
-
-## Community Workflow
-
-Retro Speedlab is meant for competitive and reproducible AI speedrunning experiments.
-
-When sharing a project generated from this template, consider including:
-
-* the game and category
-* training budget
-* reward design
-* final progress
-* best time
-* video evidence
-* model configuration
-* relevant RAM addresses
-* notes on failed strategies
-
-Small, readable projects are useful.
-
-Clear failed experiments are useful.
-
-Benchmarks become meaningful only when the setup is visible.
-
----
-
-## Learn More
-
-| Resource | Description |
-|-----------|-------------|
-| 🌐 **[Retro Speedlab](https://speedlab.datenwissenschaften.com/?utm_source=github&utm_medium=readme&utm_campaign=retro_speedlab)** | Explore AI speedrunning records and benchmarks |
-| 📖 **[Benchmarking AI Speedrunners](https://medium.com/@datenwissenschaften/benchmarking-ai-speedrunners-78fab55700eb?utm_source=github&utm_medium=readme&utm_campaign=benchmarking_article)** | Why AI speedrunning needs benchmarks |
-| 📖 **[Retro RL Cookiecutter](https://medium.com/@datenwissenschaften/retro-reinforcement-learning-cookiecutter-e3aa22b258dd?utm_source=github&utm_medium=readme&utm_campaign=cookiecutter_article)** | Start a Stable-Retro + Gymnasium + PPO project in minutes |
-
----
+`app.py` connects the Airstriker wrapper, recurrent RND model, and trainer.
+`config.yaml` is the single source for game selection, savestate, paths,
+training budget, uploads, logging, and the local UI. Generated paths are
+relative, so a project can be moved without editing machine-specific values.
+
+The example wrapper converts the Genesis controller to ten useful discrete
+movement-and-fire actions. It emits 96×96 RGB observations plus typed score,
+lives, and game-over RAM. The training state rewards score and survival,
+penalizes lost lives, and limits episode length.
+
+## Adapting the example
+
+To train another game:
+
+1. Change `training.game` and `training.savestate` in `config.yaml`.
+2. Replace the controller mapping in `src/game/actions.py`.
+3. Define verified RAM offsets in `src/ram/`.
+4. Implement game-specific rewards and termination in `src/states/`.
+5. Register those types in `src/game/wrapper.py`.
+
+Place legally obtained ROMs in `roms/`. Stable Retro imports them when the
+training process starts. Do not commit commercial ROMs or API credentials.
+
+## Template variables
+
+| Variable | Purpose |
+| --- | --- |
+| `project_name` | Human-readable project name |
+| `project_slug` | Distribution and directory name |
+| `version` | Initial project version |
+| `description` | Project summary |
+| `author_name` | Package author |
+| `author_email` | Package author email |
+| `license` | SPDX license expression |
+| `python_requires` | Supported Python range |
+| `python_classifier` | Python classifier version |
+| `python_target` | Black and Ruff target |
+| `development_status` | PyPI development status |
 
 ## License
 
-Generated projects default to `GPL-3.0-only`, but you can choose a different SPDX license expression during project generation.
-
-Check the generated project’s `pyproject.toml` for the selected license.
+GPL-3.0-only

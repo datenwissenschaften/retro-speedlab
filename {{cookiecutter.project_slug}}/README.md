@@ -2,60 +2,61 @@
 
 {{ cookiecutter.description }}
 
-This project trains a retro-game reinforcement-learning agent with [stable-retro](https://stable-retro.farama.org/), Gymnasium, and Stable-Baselines3. The starter layout keeps game logic, model construction, and the training entry point separate so experiments stay easy to change.
+This generated project is a complete Retro Speedlab example for
+`Airstriker-Genesis-v0`. It uses Stable Retro, Gymnasium, the
+`datenwissenschaften` state-machine environment, and recurrent PPO with random
+network distillation (RND).
 
-## Setup
-
-Create a local environment file and install the dependencies:
+## Quick start
 
 ```bash
-cp .env.example .env
 poetry install
-```
-
-## ROMs
-
-This project requires game ROMs to function. You must provide your own legally obtained ROMs. 
-
-- Place your ROMs in the `roms/` directory (or the path configured via `RETRO_SPEEDLAB_ROM_PATH`).
-- For instructions on how to get ROMs working, refer to the [stable-retro documentation](https://stable-retro.farama.org/getting_started/#importing-roms).
-- **Disclaimer:** We do not favor piracy. Please only use ROMs that you have the legal right to use according to your local laws.
-
-## Run
-
-Start the training run:
-
-```bash
 poetry run python app.py
 ```
- 
+
+Training metrics and controls are available at <http://127.0.0.1:18080> while
+the process is running.
+
+## Included example game
+
+Airstriker is the redistributable demo game included with Stable Retro. Its
+`Level1` state and integration data are installed with the `stable-retro`
+dependency, so this example runs without adding a commercial ROM. The `roms/`
+directory remains available when replacing Airstriker with another legally
+obtained game.
+
 ## Configuration
 
-Configure your local environment by copying `.env.example` to `.env`. The following variables control the training process:
+Edit `config.yaml` to control the game, savestate, training budget, parallel
+environment count, output directories, upload credentials, and local UI. All
+paths are relative to the project directory.
 
-- `RETRO_SPEEDLAB_TIMESTEPS`: Total number of training timesteps.
-- `RETRO_SPEEDLAB_NUM_ENVS`: Number of parallel environments for training.
-- `RETRO_SPEEDLAB_GAME_ID`: stable-retro game ID (e.g., `SuperMarioWorld-Snes-v0`).
-- `RETRO_SPEEDLAB_SAVESTATE`: Name of the savestate to start from.
-- `RETRO_SPEEDLAB_MODEL_DIR`: Directory for saving models.
-- `RETRO_SPEEDLAB_RECORDING_DIR`: Directory for saving training recordings.
-- `RETRO_SPEEDLAB_ROM_PATH`: Path to the directory containing ROMs.
-- `RETRO_SPEEDLAB_API_KEY`: API key for the Retro Speedlab platform (get yours at [speedlab.datenwissenschaften.com](https://speedlab.datenwissenschaften.com)).
+Do not commit API keys. Leave `upload.api_key` set to `null` unless uploads are
+required, and keep any credential-bearing configuration out of version control.
 
-## Project Layout
+## Example design
 
-- `app.py`: starts the training run
-- `.env.example`: documents the local runtime variables
-- `game/`: Gymnasium wrapper, observation processing, rewards, and termination logic
-- `model/`: PPO model configuration and learning-rate schedule
-- `pyproject.toml`: project metadata, dependencies, and formatter/linter settings
+- `app.py` wires the environment, recurrent RND model, and trainer together.
+- `src/game/actions.py` reduces the 12-button Genesis controller to ten useful
+  movement-and-fire actions.
+- `src/game/wrapper.py` turns those discrete actions into emulator button
+  vectors and emits 96×96 visual plus RAM observations.
+- `src/ram/airstriker.py` decodes score, lives, and game-over state from the
+  bundled Stable Retro integration.
+- `src/states/survive.py` rewards score and survival, penalizes lost lives, and
+  bounds episode duration.
+- `config.yaml` contains portable paths and reproducible training settings.
 
-## What To Customize
+To adapt the generated project to another game, replace the action mapping,
+RAM offsets, and state/reward logic, then update `training.game` and
+`training.savestate`.
 
-- Update RAM addresses and reward logic in `game/__init__.py`.
-- Tune PPO settings in `model/__init__.py`.
-- Configure the environment variables in `.env` as described in the **Configuration** section.
-- Record assumptions about the ROM, savestates, and scoring rules here so other contributors can reproduce your runs.
+## Quality checks
+
+```bash
+poetry run ruff check .
+poetry run black --check .
+```
 
 ## License
 

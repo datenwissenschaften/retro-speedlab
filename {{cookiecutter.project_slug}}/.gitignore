@@ -209,6 +209,10 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+# Retro Speedlab runtime output
+working/
+*.bk2
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

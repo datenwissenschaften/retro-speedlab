@@ -13,13 +13,7 @@ authors = [
 license = "{{ cookiecutter.license }}"
 requires-python = "{{ cookiecutter.python_requires }}"
 dependencies = [
-    "datenwissenschaften>=1.0.0,<2.0.0",
-    "python-dotenv>=1.2.2,<2.0.0",
-    "stable-baselines3 (>=2.8.0,<3.0.0)",
-    "torch (>=2.12.0,<3.0.0)",
-    "opencv-python (>=4.13.0.92,<5.0.0.0)",
-    "numpy (>=2.4.5,<3.0.0)",
-    "gymnasium (>=1.3.0,<2.0.0)",
+    "datenwissenschaften>=1.10.2,<2.0.0",
 ]
 classifiers = [
     "Development Status :: {{ cookiecutter.development_status }}",

@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 
+from datenwissenschaften import EnvironmentBuilder, ModelBuilder, Trainer
+from datenwissenschaften.recurrent_rnd import RecurrentRNDModel
+
+from src.game.wrapper import AirstrikerWrapper
+
 
 def main() -> None:
-    from dotenv import load_dotenv
-    from datenwissenschaften import EnvironmentBuilder, ModelBuilder, Trainer
+    config_path = "config.yaml"
 
-    from game import GymWrapper
-    from model import ModelWrapper
-
-    load_dotenv()
-    venv = EnvironmentBuilder(GymWrapper).build()
-    model = ModelBuilder(ModelWrapper).build(venv)
-    Trainer().train(model)
+    venv = EnvironmentBuilder(
+        AirstrikerWrapper,
+        render_mode="human",
+        config_path=config_path,
+    ).build()
+    model = ModelBuilder(RecurrentRNDModel, config_path=config_path).build(venv)
+    Trainer(config_path=config_path).train(model)
 
 
 if __name__ == "__main__":
