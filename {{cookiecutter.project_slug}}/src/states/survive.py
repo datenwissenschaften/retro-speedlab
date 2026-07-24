@@ -7,7 +7,6 @@ class SurviveAndScore(State[AirstrikerRam]):
     """Reward scoring, survival, and preserving lives during an Airstriker run."""
 
     description = "Survive for as long as possible while increasing the score."
-    progress = 0
 
     maximum_episode_steps = 18_000
     survival_reward = 0.01

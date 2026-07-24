@@ -1,8 +1,20 @@
-import gymnasium as gym
 import numpy as np
 
 _NUM_GENESIS_BUTTONS = 12
-_B, _A, _MODE, _START, _UP, _DOWN, _LEFT, _RIGHT, _C, _Y, _X, _Z = range(_NUM_GENESIS_BUTTONS)
+(
+    _B,
+    _A,
+    _MODE,
+    _START,
+    _UP,
+    _DOWN,
+    _LEFT,
+    _RIGHT,
+    _C,
+    _Y,
+    _X,
+    _Z,
+) = range(_NUM_GENESIS_BUTTONS)
 
 # Airstriker only needs movement and one fire button. Shooting is combined with
 # movement because there is no gameplay reason to stop firing during a run.

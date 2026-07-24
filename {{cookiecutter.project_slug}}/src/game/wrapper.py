@@ -10,5 +10,10 @@ class AirstrikerWrapper(StateMachineGymWrapper[AirstrikerRam]):
     start_state_cls = SurviveAndScore
     training_state_classes = (SurviveAndScore,)
 
-    def __init__(self, env):
-        super().__init__(env, obs_size=(96, 96), action_table=ACTION_TABLE)
+    def __init__(self, env, *, config_path="config.yaml"):
+        super().__init__(
+            env,
+            obs_size=(96, 96),
+            action_table=ACTION_TABLE,
+            config_path=config_path,
+        )

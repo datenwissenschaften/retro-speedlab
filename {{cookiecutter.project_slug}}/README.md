@@ -4,8 +4,8 @@
 
 This generated project is a complete Retro Speedlab example for
 `Airstriker-Genesis-v0`. It uses Stable Retro, Gymnasium, the
-`datenwissenschaften` state-machine environment, and recurrent PPO with random
-network distillation (RND).
+`datenwissenschaften` state-machine environment, and adaptive recurrent PPO
+with random network distillation (RND).
 
 ## Quick start
 
@@ -27,16 +27,17 @@ obtained game.
 
 ## Configuration
 
-Edit `config.yaml` to control the game, savestate, training budget, parallel
-environment count, output directories, upload credentials, and local UI. All
-paths are relative to the project directory.
+Edit `config.yaml` to control the game, savestate, parallel environment count,
+output directories, upload credentials, and local UI. All paths are relative
+to the project directory.
 
 Do not commit API keys. Leave `upload.api_key` set to `null` unless uploads are
 required, and keep any credential-bearing configuration out of version control.
 
 ## Example design
 
-- `app.py` wires the environment, recurrent RND model, and trainer together.
+- `app.py` wires the environment, adaptive recurrent RND model, and state
+  trainer together.
 - `src/game/actions.py` reduces the 12-button Genesis controller to ten useful
   movement-and-fire actions.
 - `src/game/wrapper.py` turns those discrete actions into emulator button

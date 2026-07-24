@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
 
-from datenwissenschaften import EnvironmentBuilder, ModelBuilder, Trainer
-from datenwissenschaften.recurrent_rnd import RecurrentRNDModel
+import argparse
+from functools import partial
+from pathlib import Path
+
+from datenwissenschaften import EnvironmentBuilder, ModelBuilder, StateTrainer
+from datenwissenschaften.rnd import AdaptiveRecurrentRNDModel
 
 from src.game.wrapper import AirstrikerWrapper
 
 
 def main() -> None:
-    config_path = "config.yaml"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config", type=Path, nargs="?", default=Path("config.yaml"))
+    args = parser.parse_args()
 
+    wrapper = partial(AirstrikerWrapper, config_path=args.config)
     venv = EnvironmentBuilder(
-        AirstrikerWrapper,
-        render_mode="human",
-        config_path=config_path,
+        wrapper,
+        render_mode="rgb_array",
+        config_path=args.config,
     ).build()
-    model = ModelBuilder(RecurrentRNDModel, config_path=config_path).build(venv)
-    Trainer(config_path=config_path).train(model)
+    StateTrainer(
+        ModelBuilder(AdaptiveRecurrentRNDModel, config_path=args.config),
+        transition_bonus=0.0,
+        config_path=args.config,
+    ).train(venv)
 
 
 if __name__ == "__main__":
