@@ -9,6 +9,19 @@ with random network distillation (RND).
 
 ## Quick start
 
+Before starting training:
+
+1. Install and start a local Redis server. The default configuration connects
+   to `redis://127.0.0.1:6379/0`. Redis stores training history and
+   model-related runtime state; model checkpoints and episode recordings remain
+   in the directories configured under `paths`.
+2. To submit runs and compete, create an account at
+   <https://speedlab.datenwissenschaften.com/> and obtain an API key. Set that
+   key as `upload.api_key` in `config.yaml`. You can leave the value set to
+   `null` for local-only training.
+
+Then install the project and start training:
+
 ```bash
 poetry install
 poetry run python app.py
@@ -31,8 +44,13 @@ Edit `config.yaml` to control the game, savestate, parallel environment count,
 output directories, upload credentials, and local UI. All paths are relative
 to the project directory.
 
-Do not commit API keys. Leave `upload.api_key` set to `null` unless uploads are
-required, and keep any credential-bearing configuration out of version control.
+Do not commit API keys. Keep `upload.api_key` set to `null` unless you intend to
+upload competition runs, and keep credential-bearing configuration out of
+version control.
+
+The `ui.redis_url` setting must point to a running Redis instance. Redis is used
+for dashboard history and model-related runtime state, including callback and
+curriculum data. The model files themselves are stored under `paths.models`.
 
 ## Example design
 
