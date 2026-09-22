@@ -1,5 +1,7 @@
 # Retro Speedlab Cookiecutter
 
+[![CI](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml/badge.svg)](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml) ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg) ![Cookiecutter](https://img.shields.io/badge/template-Cookiecutter-D4AA00.svg) [![Last commit](https://img.shields.io/github/last-commit/datenwissenschaften/retro-speedlab)](https://github.com/datenwissenschaften/retro-speedlab/commits/main) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A Cookiecutter template that scaffolds a reproducible Stable Retro
 reinforcement-learning project, built on the
 [Retro Speedlab training library](https://github.com/datenwissenschaften/retro-speedlab-core).
