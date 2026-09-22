@@ -1,6 +1,6 @@
 # Retro Speedlab Cookiecutter
 
-[![CI](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml/badge.svg)](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml) ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg) ![Cookiecutter](https://img.shields.io/badge/template-Cookiecutter-D4AA00.svg) [![Last commit](https://img.shields.io/github/last-commit/datenwissenschaften/retro-speedlab)](https://github.com/datenwissenschaften/retro-speedlab/commits/main) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml/badge.svg)](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml) ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg) ![Cookiecutter](https://img.shields.io/badge/template-Cookiecutter-D4AA00.svg) [![Last commit](https://img.shields.io/github/last-commit/datenwissenschaften/retro-speedlab)](https://github.com/datenwissenschaften/retro-speedlab/commits/main) [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE) ![Ruff](https://img.shields.io/badge/lint-Ruff-D7FF64.svg)
 
 A Cookiecutter template that scaffolds a reproducible Stable Retro
 reinforcement-learning project, built on the
