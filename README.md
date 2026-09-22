@@ -22,7 +22,7 @@ Install Cookiecutter and generate a project:
 
 ```bash
 pipx install cookiecutter
-cookiecutter https://github.com/datenwissenschaften/retro-arena
+cookiecutter https://github.com/datenwissenschaften/retro-speedlab
 cd your-project-name
 poetry install
 poetry run python app.py
