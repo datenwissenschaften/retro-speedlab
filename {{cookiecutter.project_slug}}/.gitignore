@@ -213,6 +213,11 @@ tempCodeRunnerFile.py
 working/
 *.bk2
 
+# Retro Speedlab ROMs: never commit ROM data, legally obtained or not.
+# Only the placeholder below stays tracked.
+roms/*
+!roms/.gitkeep
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

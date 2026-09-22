@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  POETRY_VIRTUALENVS_IN_PROJECT: "true"
+
+jobs:
+  template:
+    name: Validate template source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: template-venv-${{ runner.os }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install generator dependencies
+        run: poetry install --no-root
+
+      - name: Lint template source
+        run: poetry run ruff check --config pyproject.toml .
+
+      - name: Check template formatting
+        run: poetry run ruff format --config pyproject.toml --check .
+
+      - name: Test template rendering
+        run: poetry run pytest tests/ -v
+
+  generated-project:
+    name: Generate, install, and smoke-test a real project
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install generator dependencies
+        run: poetry install --no-root
+
+      - name: Generate a project with representative, non-default values
+        run: |
+          poetry run cookiecutter . --no-input \
+            --output-dir "${{ runner.temp }}/generated" \
+            project_name="Speedlab CI Smoketest" \
+            version="0.1.0" \
+            description="Deterministic CI smoke test project generated from the Retro Speedlab template." \
+            author_name="CI Runner" \
+            author_email="ci@example.com" \
+            license="MIT"
+
+      - name: Cache generated project's Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/generated/speedlab-ci-smoketest/.venv
+          key: generated-venv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Install the generated project
+        working-directory: ${{ runner.temp }}/generated/speedlab-ci-smoketest
+        run: poetry install
+
+      - name: Lint the generated project
+        working-directory: ${{ runner.temp }}/generated/speedlab-ci-smoketest
+        run: poetry run ruff check .
+
+      - name: Check the generated project's formatting
+        working-directory: ${{ runner.temp }}/generated/speedlab-ci-smoketest
+        run: poetry run ruff format --check .
+
+      - name: Run the generated project's own tests
+        working-directory: ${{ runner.temp }}/generated/speedlab-ci-smoketest
+        run: poetry run pytest -v
+
+      - name: Smoke-test application imports
+        working-directory: ${{ runner.temp }}/generated/speedlab-ci-smoketest
+        run: poetry run python -c "import app; print('app.py imported successfully')"

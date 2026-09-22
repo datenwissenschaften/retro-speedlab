@@ -1,0 +1,34 @@
+[project]
+name = "retro-speedlab"
+version = "0.1.0"
+description = "Cookiecutter template that scaffolds reproducible Stable Retro reinforcement-learning projects built on the Retro Speedlab training library."
+readme = "README.md"
+license = "GPL-3.0-only"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "cookiecutter>=2.6.0,<3.0.0",
+    "pytest>=8.0.0,<9.0.0",
+    "pyyaml>=6.0.0,<7.0.0",
+    "ruff>=0.14.13",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# "I" (import sorting) is deliberately excluded here: ruff's first-party/
+# third-party classification depends on a file's real position relative to
+# its project root, which is only correct once the template is rendered.
+# Import order in "{{ cookiecutter.project_slug }}/" is instead enforced by
+# the "generated-project" CI job, which lints the actual rendered output.
+select = ["E", "F"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false

@@ -74,8 +74,14 @@ RAM offsets, and state/reward logic, then update `training.game` and
 
 ```bash
 poetry run ruff check .
-poetry run black --check .
+poetry run ruff format --check .
+poetry run pytest
 ```
+
+`tests/` covers the action table, RAM decoding, and reward/termination logic
+in `src/states/survive.py` without an emulator. It does not exercise
+`app.py` itself, which requires Stable Retro's emulator core and a running
+Redis instance.
 
 ## License
 
