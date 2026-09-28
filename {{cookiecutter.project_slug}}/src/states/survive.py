@@ -6,7 +6,10 @@ from src.ram.airstriker import AirstrikerRam
 class SurviveAndScore(State[AirstrikerRam]):
     """Reward scoring, survival, and preserving lives during an Airstriker run."""
 
-    description = "Survive for as long as possible while increasing the score."
+    description = (
+        "You fly a fighter jet at the bottom of a vertical shooter. It always fires and can only move sideways. "
+        "Which move keeps it alive and scores the most points?"
+    )
 
     maximum_episode_steps = 18_000
     survival_reward = 0.01

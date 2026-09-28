@@ -27,7 +27,7 @@ The generated project ships:
 - a state-machine Gymnasium wrapper
 - typed RAM decoding and reward shaping
 - a reduced discrete action space
-- recurrent PPO with random network distillation (RND)
+- the Laya decision model, fine-tuned from rewards
 - local training telemetry and controls
 - a `tests/` suite covering actions, RAM decoding, and reward logic
 - Poetry, Ruff, and pre-commit configuration
@@ -105,23 +105,20 @@ your-project/
     └── test_survive_state.py
 ```
 
-`app.py` wires the environment, adaptive recurrent RND model, and trainer
-together:
+`app.py` starts `LayaTrainer` with the game wrapper:
 
 ```mermaid
 flowchart LR
     CFG[config.yaml] --> APP[app.py]
-    APP --> ENV[EnvironmentBuilder]
-    ENV --> WRAP[AirstrikerWrapper]
+    APP --> TRAINER[LayaTrainer]
+    TRAINER --> WRAP[AirstrikerWrapper]
     WRAP --> RAM[AirstrikerRam]
     WRAP --> STATE[SurviveAndScore]
-    APP --> MODEL[ModelBuilder + AdaptiveRecurrentRNDModel]
-    APP --> TRAINER[StateTrainer]
-    TRAINER --> UI[Local telemetry UI]
-    TRAINER --> REDIS[(Redis)]
+    TRAINER --> LAYA[Laya decision model]
+    TRAINER --> UI[Dashboard + stream view]
+    TRAINER --> DB[(JSON database)]
     LIB[Retro Speedlab library] -.base classes.-> WRAP
     LIB -.-> STATE
-    LIB -.-> MODEL
     LIB -.-> TRAINER
 ```
 
@@ -130,23 +127,25 @@ flowchart LR
 `Airstriker-Genesis-v0` is the freeware Sega Genesis game bundled with
 Stable Retro for testing, so the example trains without a commercial ROM.
 
-- `src/game/actions.py` reduces the 12-button Genesis controller to ten
-  useful movement-and-fire actions.
-- `src/game/wrapper.py` turns those discrete actions into emulator button
-  vectors and emits 96×96 RGB observations alongside typed RAM.
-- `src/ram/airstriker.py` decodes word-swapped Genesis RAM into typed
-  score, lives, and game-over values.
+- `src/game/actions.py` defines three described actions as four-frame
+  button sequences; Airstriker only fires when the button is re-pressed, so
+  every action taps fire once.
+- `src/game/wrapper.py` registers the states, RAM layout, and actions.
+- `src/ram/airstriker.py` decodes word-swapped Genesis RAM into score,
+  lives, game-over state, and ship position, and describes them to Laya.
 - `src/states/survive.py` rewards score gains and survival, penalizes lost
   lives and game-over, and bounds episode length.
-- Training uses the library's recurrent PPO model with random network
-  distillation (RND) for exploration.
+- Laya picks every action; each state's `description` is the question it
+  answers, and group-relative policy gradients fine-tune it from rewards.
 
 ## Adapting to another game
 
 1. Change `training.game` and `training.savestate` in `config.yaml`.
-2. Replace the controller mapping in `src/game/actions.py`.
+2. Replace the controller mapping and action descriptions in
+   `src/game/actions.py`.
 3. Define verified RAM offsets in `src/ram/`.
-4. Implement game-specific rewards and termination in `src/states/`.
+4. Implement game-specific rewards, termination, and a question for Laya
+   (`description`) in `src/states/`.
 5. Register those types in `src/game/wrapper.py`.
 6. Update `tests/` to match the new action table and RAM layout.
 
@@ -161,11 +160,12 @@ training budget, uploads, logging, and the local UI:
 
 | Section | Purpose |
 | --- | --- |
-| `paths` | ROM, model, recording, and cache directories, relative to the project |
-| `training` | Game ID, savestate(s), and parallel environment count (`auto` detects a sensible value) |
+| `paths` | ROM, model, recording, cache directories, and the JSON training database, relative to the project |
+| `training` | Game ID, savestate, and fingerprint |
+| `laya` | The Laya checkpoint (Hugging Face Hub ID or local directory) |
 | `log_level` | Standard Python logging level |
 | `upload` | Optional Speedlab competition API endpoint and key (`null` for local-only training) |
-| `ui` | Local telemetry dashboard host/port and Redis connection for history |
+| `ui` | Local telemetry dashboard and stream view host/port |
 
 All paths are relative to the project directory, so a generated project can
 be moved without editing machine-specific values. Do not commit a real
@@ -213,7 +213,7 @@ poetry run pytest
 
 `tests/` covers the action table, RAM decoding, and reward/termination
 logic without an emulator. It does not exercise `app.py` itself, which
-needs Stable Retro's emulator core and a running Redis instance; CI instead
+needs Stable Retro's emulator core and a GPU for Laya; CI instead
 smoke-tests `app.py` by importing it (see [Reproducibility](#reproducibility)).
 
 ## ROM and licensing notes
@@ -238,8 +238,8 @@ configuration, tests, and tooling for a specific game.
 
 **[`retro-speedlab-core`](https://github.com/datenwissenschaften/retro-speedlab-core)**
 (published as the `datenwissenschaften` package) is the reusable training
-engine: recurrent CNN-LSTM PPO, RND exploration, vectorized environments,
-resumable checkpoints, and live telemetry.
+engine: the Laya decision model, its reward-driven fine-tuning, the
+state-machine environment, resumable checkpoints, and live telemetry.
 
 A generated project depends on the library; it does not reimplement it.
 Game-specific code (actions, RAM offsets, reward shaping) lives in the

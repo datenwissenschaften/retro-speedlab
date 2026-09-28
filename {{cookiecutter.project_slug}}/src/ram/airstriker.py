@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+from typing import Any
 
 from datenwissenschaften.ram import RamInfo, ram_array
+
+SHIP_LEFT_EDGE = 137
+SHIP_RIGHT_EDGE = 412
 
 
 def genesis_uint(raw_bytes: list[int]) -> int:
@@ -21,6 +25,7 @@ class AirstrikerRam(RamInfo):
     score_bytes: list[int] = ram_array(0x024E, 4)
     lives_bytes: list[int] = ram_array(0x025A, 2)
     game_over_bytes: list[int] = ram_array(0x0266, 2)
+    ship_x_bytes: list[int] = ram_array(0x0268, 2)
 
     @property
     def score(self) -> int:
@@ -33,3 +38,15 @@ class AirstrikerRam(RamInfo):
     @property
     def game_over(self) -> bool:
         return genesis_uint(self.game_over_bytes) == 1 and self.lives == 0
+
+    @property
+    def ship_position_percent(self) -> int:
+        ship_x = genesis_uint(self.ship_x_bytes)
+        return round((ship_x - SHIP_LEFT_EDGE) * 100 / (SHIP_RIGHT_EDGE - SHIP_LEFT_EDGE))
+
+    def describe(self) -> dict[str, Any]:
+        return {
+            "score": self.score,
+            "lives": self.lives,
+            "ship_position_percent_from_left": self.ship_position_percent,
+        }

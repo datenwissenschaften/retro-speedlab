@@ -225,3 +225,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Retro Speedlab analysis output
+discovery/
+explore/

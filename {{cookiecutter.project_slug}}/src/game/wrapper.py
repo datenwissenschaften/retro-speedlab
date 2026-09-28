@@ -1,19 +1,13 @@
-from datenwissenschaften.gym import StateMachineGymWrapper
+from datenwissenschaften.environment.wrapper import StateMachineGymWrapper
 
-from src.game.actions import ACTION_TABLE
+from src.game.actions import ACTION_DESCRIPTIONS, ACTION_TABLE
 from src.ram.airstriker import AirstrikerRam
 from src.states.survive import SurviveAndScore
 
 
 class AirstrikerWrapper(StateMachineGymWrapper[AirstrikerRam]):
-    ram_info_cls = AirstrikerRam
     start_state_cls = SurviveAndScore
-    training_state_classes = (SurviveAndScore,)
-
-    def __init__(self, env, *, config_path="config.yaml"):
-        super().__init__(
-            env,
-            obs_size=(96, 96),
-            action_table=ACTION_TABLE,
-            config_path=config_path,
-        )
+    state_classes = (SurviveAndScore,)
+    ram_info_cls = AirstrikerRam
+    action_table = ACTION_TABLE
+    action_descriptions = ACTION_DESCRIPTIONS

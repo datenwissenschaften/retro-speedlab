@@ -9,5 +9,8 @@
   "python_requires": ">=3.12,<3.13",
   "python_classifier": "3.12",
   "python_target": "py312",
-  "development_status": "1 - Planning"
+  "development_status": "1 - Planning",
+  "_copy_without_render": [
+    ".claude/skills/*"
+  ]
 }
