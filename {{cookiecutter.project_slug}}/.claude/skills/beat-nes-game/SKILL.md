@@ -1,6 +1,6 @@
 ---
 name: beat-nes-game
-description: Turn this generated retro-speedlab project into a game package (automatic RAM discovery), train, diagnose and regularly optimize a retro-speedlab game package that beats an NES level with Laya (one Laya model per state machine state). Use when creating a new game package, when a game's training stalls or collapses, when asked to review rewards, detections or curriculum progress, or on a scheduled optimization run for a game project.
+description: Turn this generated retro-speedlab project into a game package (automatic RAM discovery), learn the game's mechanics, enemies and power-ups, design the state machine, hints and rewards, then train, diagnose and regularly optimize a retro-speedlab game package that beats an NES level with Laya (one Laya model per state machine state). Use when creating a new game package, when a game's training stalls or collapses, when asked to review rewards, hints, detections or curriculum progress, or on a scheduled optimization run for a game project.
 ---
 
 # Beat an NES game with Laya
@@ -8,9 +8,12 @@ description: Turn this generated retro-speedlab project into a game package (aut
 This project was generated from the retro-speedlab template and still contains its Airstriker example. It
 depends on `retro-speedlab-core` (the engine, `datenwissenschaften` on PyPI,
 https://github.com/datenwissenschaften/retro-speedlab-core) and contains only game knowledge: RAM map,
-detectors, actions, states, rewards. The engine owns learning, curriculum, UI and deployment. Work in small
-verified steps, follow the engine's `AGENTS.md` (no defaults, fail fast, ruff, loguru, python-box, no
+detectors, actions, states, hints, rewards. The engine owns learning, curriculum, UI and deployment. Work in
+small verified steps, follow the engine's `AGENTS.md` (no defaults, fail fast, ruff, loguru, python-box, no
 comments), and record every verified game fact in `NOTES.md`.
+
+The order matters: first understand the whole game, then design states, hints and rewards from that
+understanding, then prove that a player who only follows the hints can win, and only then train.
 
 Run every command from the project root. Placeholders used below:
 
@@ -30,6 +33,7 @@ Run every command from the project root. Placeholders used below:
    ```
    That directory holds `data.json` (known RAM variables), `scenario.json` (done condition) and `*.state`
    (start states). 298 NES games are integrated; a missing game needs a stable-retro integration first.
+   Read `scenario.json`: its done condition (often `lives` negative) ends every episode, whatever the states say.
    To develop against a local engine checkout instead of the released package, replace the dependency with
    `[tool.poetry.dependencies] datenwissenschaften = { path = "<engine checkout>", develop = true }`.
 2. **Configure the game** in `config.yaml`: `training.game: <Game>-Nes-v0`, `training.savestate: <state>`,
@@ -47,19 +51,24 @@ src/ram/<game>.py       GameRam(RamInfo) with ram(0x...) fields and describe()
 src/game/actions.py     ACTION_TABLE (actions, frames, buttons) and ACTION_DESCRIPTIONS
 src/game/vision.py      detectors built from assets/ templates and RAM positions
 src/game/heading.py     maps an offset to the action that moves toward it (when movement is projected)
+src/game/hints.py       every suggested action and nothing else (section 5)
 src/game/wrapper.py     StateMachineGymWrapper subclass wiring the above
 src/states/             one State per phase, a shared base state, exploring vs targeted states
-assets/                 template PNGs cut from real frames
-tests/                  one test per mechanic: detection, reward, transition
-NOTES.md                verified RAM addresses, mechanics, pitfalls, open questions
+assets/                 template PNGs cut from real frames: targets, enemies, power-ups
+tests/                  one test per mechanic: detection, hint, reward, transition
+NOTES.md                verified RAM addresses, mechanics, catalogue, pitfalls, open questions
 .claude/skills/         this skill and its scripts
 ```
 
 The engine version is the engine maintainer's decision: never bump it from a game project.
 
-## 2. Discover the RAM automatically, then verify
+## 2. Learn the whole game before writing states
 
-Never guess mechanics. Verify each one in the emulator and write it into `NOTES.md` with the evidence.
+Never guess mechanics. Verify each one in the emulator and write it into `NOTES.md` with the evidence. A
+state machine built on a wrong mechanic cannot be trained into a win: in Snake Rattle 'n' Roll the weight
+drain while entering the exit counted as damage and ended every winning attempt before the win flag set.
+
+### RAM discovery
 
 - **Discover everything first** with `scripts/ram_discover.py`; it needs only the game id:
   ```bash
@@ -81,6 +90,8 @@ Never guess mechanics. Verify each one in the emulator and write it into `NOTES.
     name them (items, weight, keys, doors, lives, level, room).
   Mirrors are common: of equal candidates keep the lowest address. The CPU stack (0x100–0x1FF) and the
   sprite table (0x200–0x2FF) are excluded because games reuse them.
+- **Build a world location** from screen and position bytes (signed high byte × 256 + low byte per axis) and
+  check that it is continuous while walking. Hints, routes and exploration all depend on it.
 - **Write `src/ram/<game>.py`** from verified values only, with a `describe()` that returns what Laya needs
   (lives, timer, progress counters, flags), and pin each field with a test.
 - **Refine a sprite position** with `scripts/ram_locate.py` when the automatic color is shared by other
@@ -91,6 +102,9 @@ Never guess mechanics. Verify each one in the emulator and write it into `NOTES.
       --max-fill 0.9 --playfield-bottom <row> --decisions 1500 --seed 0 --out locate.json
   ```
   Prefer RAM positions over color blobs: signs, pickups and HUD icons often share the player's colors.
+
+### Map the level and its gates
+
 - **Map the level** with `scripts/explore.py` (Go-Explore). It returns milestones (the first time each tracked
   RAM value appears, with a savestate and action path each), death hotspots and maxima:
   ```bash
@@ -101,25 +115,66 @@ Never guess mechanics. Verify each one in the emulator and write it into `NOTES.
   Put the discovered progress bytes (counters, flags) in `--cell` with a high `--priority`. Continue from a
   milestone with `--start explore/<milestone>.state`. If a gate value is never reached, the state machine
   cannot pass that gate: fix the gate before training.
+- **List every gate** of the level: what must happen before the next part opens (eat to a weight, ring a
+  bell, collect a key, defeat a boss), and what undoes it (a hit costs weight, a death resets a counter).
 - **Test mechanics directly**: restore savestates with `env.em.set_state(bytes); env.data.reset();
-  env.data.update_ram()` and poke RAM with `env.unwrapped.data.memory.assign(address, "|u1", value)`.
-- **Prove every detector on real frames** from the level start and from later milestones: draw
-  `state.detections()` with `datenwissenschaften.vision.overlay.draw_detections` and look at the image. Check
-  both misses and false positives (same-colored signs, the player's own sprite, HUD, thin edges).
-- **Prove every transition condition** by reaching it (explorer milestone or steering with the `move` hint)
-  and reading the RAM change. A condition that never fires blocks the whole curriculum.
+  env.data.update_ram()` and poke RAM with `env.unwrapped.data.memory.assign(address, "|u1", value)`. Leave
+  the player idle for a few thousand frames at each gate to separate time-based effects from damage.
+- **Time the win**: record every frame from entering the exit to the win flag. Flags often set many frames
+  after other bytes change (the Snake Rattle 'n' Roll win flag set 78 frames after the weight started draining
+  into the door); anything that ends the attempt earlier hides the win.
 
-## 3. State machine
+### Catalogue enemies, power-ups and hazards
+
+Laya only knows what `describe()` tells it, so every object that hurts or helps must be detected.
+
+1. **Collect frames**: play from the level start and from each milestone, and dump frames around every damage
+   event (the lives or health byte drops) and every pickup (a counter rises). Tile them into contact sheets
+   (`ffmpeg -i run.mp4 -vf "fps=1,scale=160:-1,tile=8x6" sheet_%02d.png`) and look at them.
+2. **Name every object**: each enemy type (land, water, air, stomping, bosses), each power-up (extra time,
+   extra life, points, speed, invincibility, food), and each hazard that is part of the level (water, pits,
+   spikes, waterfalls). Write the list into `NOTES.md` with where it appears and what it does, verified by
+   touching it in the emulator.
+3. **Cut templates** from real frames into `assets/` (one PNG per sprite pose that differs; tight crop, no
+   background where possible) and add them to the matching `TemplateDetector` in `vision.py`: one detector
+   for enemies, one for power-ups, one per target.
+4. **Prove each detector** on frames from the level start and from later milestones: draw
+   `state.detections()` with `datenwissenschaften.vision.overlay.draw_detections` and look at the image. Check
+   both misses and false positives (same-colored signs, the player's own sprite, HUD, thin edges). Pin each
+   template with a test that renders it into a blank frame.
+5. **Hazards without sprites** (water, pits) are detected by color or RAM (for example the fraction of the
+   water color around the player); state them as facts (`in_water`), not as advice.
+
+When the user names an object you cannot find in the recordings, ask for a screenshot or the place it
+appears instead of guessing a sprite.
+
+### Pitfalls
+
+- **Replays of `.bk2` recordings can drift** from the live run (curriculum restores, reset timing). Never
+  analyse training behaviour from `.bk2` replays; use the live per-frame status
+  (`/api/live/frames`) or runs started from savestates.
+- **`scenario.json` ends episodes** on its own condition; the state machine cannot keep an episode alive past it.
+- **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
+
+## 3. Develop the state machine yourself
+
+Derive the states from the gates, not from a template: one state per gate, in the order the game enforces.
 
 - One state per phase with a single goal: search for X, reach X, operate X, leave through X.
 - `description` is Laya's question: one short line, `"You are the <hero>. <goal>. Which move?"`. Long
   questions cost tokens and overflow the stream panel.
-- `describe()` gives only what the choice needs: the target with `visible`, `direction`, `distance`, and a
-  `move` field naming the action that heads toward it (`last_seen` when it left the screen), the nearest
-  enemy, a few RAM facts. Pretrained Laya follows such a `move` hint most of the time before any training.
-- `_next()` returns the next state class only on a verified condition. `_won()` only in the final state.
-- `_terminated()` on life loss and on damage the game counts.
+- `describe()` gives facts only: the target with `visible`, `direction`, `distance`, the nearest enemy and
+  power-up, hazards, a few RAM facts. Advice is merged in from `hints.py` (section 5).
+- Split transitions into `_advance()` (the verified forward condition) and `_fallback()` (a lost
+  precondition sends the snake back, for example losing weight before the scale rang goes back to eating).
+  `_next()` returns the fallback first. Only forward transitions pay the transition reward; the engine ignores
+  backward transitions for curriculum success and checkpoints.
+- `_won()` only in the final state, on the verified win flag.
+- `_terminated()` only on game over. Lost lives and hits cost reward but the attempt continues from the
+  respawn, so later parts of the level are practised instead of restarting from the beginning.
 - `_truncated()` after a fixed frame budget per state (for example 3600 frames, 60 s at 60 Hz).
+- The final state must not treat what the exit does to the player as damage (entering the door drained the
+  weight to zero).
 
 ## 4. Rewards
 
@@ -127,30 +182,67 @@ Each state trains its own Laya, and a transition ends that model's trajectory. S
 
 | Signal | Rule |
 |---|---|
-| Transition to the next state | the largest reward of the state (10); must beat anything farmable before it |
+| Transition to the next state | the largest reward of the state (10); must beat anything farmable before it; never for a fallback |
 | Winning the level | 20 in the final state |
-| Approach | potential-based: `0.05 × pixels closer`, ignore jumps above the target-switch distance (24 px) |
+| Approach | potential-based: `0.05 × pixels closer` to a visible target, or to the route waypoint when the target is remembered; ignore jumps above the target-switch distance (24 px) |
 | Progress | only for verified RAM progress (items +1, progress counters +2) |
-| Exploration | only in searching states: new screen +1, new 16 px spot +0.1 |
-| Failure | −10 on life or damage loss, ends the episode |
+| Exploration | only in searching states and only until a route to the target is known: new screen +1, new 16 px spot +0.1, decaying with visits across attempts |
+| Hit | −5 per unit of health, weight or armour lost, in every state except where the game itself drains it |
+| Lost life | −10, the attempt continues |
+| Game over | ends the attempt |
 | Step cost | 0.002 per frame, so a full 3600-frame timeout costs about −7 |
 
-Check each state: finishing fast beats wandering until the timeout, dying is worse than timing out, and no
-loop can farm reward (approach rewards are refunded when moving away). Episode scores accumulate across the
-curriculum: a checkpoint stores the score that reached it and episodes starting there continue from it.
+Check each state: finishing fast beats wandering until the timeout, dying is worse than timing out, no loop
+can farm reward (approach rewards are refunded when moving away, fallbacks pay nothing), and damage is
+compared with the previous frame so a respawn is not charged twice.
 
-## 5. Actions
+## 5. Hints
+
+A hint is anything that suggests an action. Keep all of them in `src/game/hints.py` and nowhere else, so
+anyone can see what is advice and what Laya learns. States only merge the hint dictionaries into
+`describe()`. Pretrained Laya follows a `move` hint most of the time before any training, which is what makes
+the first wins possible.
+
+Hints must be generic rules that work in every level of the game, never level knowledge:
+
+| Hint | Rule |
+|---|---|
+| `move` to a visible target | the action whose screen direction best matches the offset to the nearest target |
+| `move` along a route | when the target is off screen but was seen before, head for the route waypoint about 48 px ahead |
+| `remembered` | the target is off screen and its place is known |
+| attack or eat (`tongue`) | the target is within reach and straight ahead in the facing direction |
+| `blocked` / `jump` | while stuck (no movement for 12 frames), alternate every 12 frames between jumping and pushing on; a jump from standstill alone never frees the player |
+| `move_away`, `ahead` | a close enemy (under 48 px): the escape direction and whether it is in the facing direction |
+
+**Routes are learned, not written.** Straight lines to a remembered place run into walls and ledges. The
+engine's `Landmarks` records the trail a state walked (a point every 8 px, restarted on respawn jumps) when it
+first sees its target, removes loops, keeps the shortest route, and `waypoint()` returns the next point on it.
+Never hardcode coordinates, routes or seeds into the game package.
+
+**Prove the hints before training.** Write a scripted player that does exactly what the hints say (plus
+`jump` when an enemy is `ahead`) and run it through the whole level from the start savestate with the state
+machine. If it cannot win, Laya cannot learn a win from those hints: find where it gets stuck, look at the
+frame, and fix the state, hint or detector first. Measure afterwards how often Laya follows each state's hint
+(section 7) to see what it learned beyond them.
+
+## 6. Actions
 
 - `ACTION_TABLE` has shape `(actions, frames, buttons)` in the order of `env.buttons`; 4 frames per decision
   works well.
 - Hold movement buttons for all frames; tap edge-triggered buttons (fire, jump, attack) on frame 0 only.
 - Name actions by what they do on screen (`up-right`, not `UP`) and map offsets to them in `heading.py`
   when the game projects movement (read the projection from the `position` responses of the discovery).
+- Test whether the action set can pass every obstacle (a tapped jump from standstill lands on the same spot;
+  jumping onto ledges may need the direction held). Changing actions changes the models' options and needs a
+  fresh start.
 
-## 6. How Laya learns in the engine (verify before changing)
+## 7. How Laya learns in the engine (verify before changing)
 
 - One checkpoint per state: `<paths.models>/<game>/<savestate>/<State>/laya.pt` (weights, 8-bit AdamW,
-  trust region, trained decisions). The active state's model is swapped into the single GPU slot.
+  trust region, trained decisions). The active state's model is swapped into the single GPU slot; the next
+  state's checkpoint is prefetched into RAM and saves are written in the background.
+- Once every state is mastered, every episode is a full run from the start savestate, and each state's model
+  takes over when its phase begins.
 - Options are shuffled by a stable hash of state and question. Without it Laya gives about 97% to the first
   listed option and every fresh model starts stuck on one action.
 - Group-relative policy gradient with importance weights for the exploration mixture (20% random actions,
@@ -162,55 +254,73 @@ curriculum: a checkpoint stores the score that reached it and episodes starting 
   (7-bit mantissa) and relies on backtracking.
 - The entropy bonus is a small constant (0.001). An adaptive entropy target pushed every model toward
   uniform play and unlearned correct choices.
-- Changing what a model sees (option order, observation layout) requires a new `MODEL_LAYOUT` value in
-  `training/identity.py`; training then starts fresh once. Never use the engine version for this.
+- Changing what a model sees (option order, observation layout, action or question texts) requires a new
+  `MODEL_LAYOUT` value in `training/identity.py`; training then starts fresh once. Moving code (for example
+  into `hints.py`) without changing the observation needs no reset. Never use the engine version for this.
 
-## 7. Diagnose a run
+## 8. Diagnose a run
 
-Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.savestate_curriculum`, `summary`,
-`server.release`) and `/api/live/episode`, `/api/live/frames?episode=<id>&start=<n>` (per-frame status with
-probabilities, action and state, and JPEG frames to look at).
+Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.savestate_curriculum`, `summary`
+with `full_run_episodes` and `full_run_wins`, `server.release`) and `/api/live/episode`,
+`/api/live/frames?generation=<g>&episode=<id>&start=<n>` (per-frame status with probabilities, action, state,
+observation and events, and JPEG frames to look at).
+
+Compute per state from the live frames: how often the chosen action equals the hinted `move`, the average
+probability of the hinted move, weight and life changes with the frame they happen on, and time in water or
+stuck.
 
 | Symptom | Cause | Action |
 |---|---|---|
 | One action at 100%, entropy near 0 | collapse | check option shuffle, importance weights, trust region; start the state fresh |
 | `learning_rate_scale` at its maximum, `kl` far below 0.01 | steps too small | widen the scale range |
 | Probabilities near uniform for a long time | entropy pressure or no reward signal | check the entropy constant and the state's rewards |
-| Episodes end in seconds at about −10 | early damage or death | watch replays for the hazard; add it to `describe()` |
-| Episodes time out at about −7 in a searching state | target never seen | verify the detector on that screen; check the exploration reward |
+| Laya ignores the hint in a searching state | exploration reward pulls elsewhere | stop exploration once a route is known |
+| Stuck at the same place until the timeout | straight-line hint into a wall | check the route and the stuck alternation with the scripted player |
+| Repeated hits at the same place | undetected enemy or hazard | find it in the frames, add a template, verify |
+| Weight or health drains steadily | hazard or time effect | reproduce idle and in the hazard, then add it as a fact |
+| Episodes time out in a searching state | target never seen | verify the detector on that screen; check the exploration reward |
 | A state never gains wins | transition condition never fires | reproduce with the explorer or steering, then fix the condition |
+| The player reaches the exit but no win | the attempt ends before the win flag | time the win (section 2) and stop charging what the exit does |
 | Curriculum checkpoint deleted repeatedly | score stagnation from a bad start | inspect the checkpoint frame |
 
-## 8. Deploy
+## 9. Deploy
 
 - Build an image from the package plus the committed engine (a Dockerfile with a Node stage for the
   dashboard, `python -m stable_retro.import roms`, `ffmpeg`, and GPU access), for example with Dokku
   (`--gpus=all`, persistent storage for the `working/` directory, wait-to-retire 0 so two containers never
-  share the GPU). When training against a local engine checkout, commit it first; never commit `config.yaml` with API keys or ROMs.
+  share the GPU). When training against a local engine checkout, commit it first; never commit `config.yaml`
+  with API keys or ROMs.
 - Stamp every deploy with a CalVer release `YYYY.MM.DD-N` (N counts the day's deploys, kept on the server,
   for example as a Dokku config value) written into `ui.release`. The stream shows it as the Laya model and
   reloads itself when it changes, so a running live stream picks up every deploy.
-- Keep training data, the Docker data root and the containerd root on a large data disk and prune the build
-  cache (`docker builder prune -af`) regularly: every deploy of the image adds gigabytes.
+- Keep training data, the Docker data root and the containerd root on a large data disk. Keep the build
+  cache: a scheduled `docker builder prune -af` makes the next deploy rebuild every layer (15 minutes and
+  more with the CUDA wheels). Prune only by age (`docker builder prune -f --filter until=168h`) or by hand.
 - A push that is interrupted locally can keep building on the server: make sure the old build is gone
   before pushing again.
-- Deploying restarts training from the saved state checkpoints.
+- Deploying restarts training from the saved state checkpoints. Recording numbers restart too, so copy a
+  recording you need before the next deploy overwrites it.
+- The stream plays every attempt to its end. Between new attempts it shows random full or successful runs,
+  labelled as replays and not live training.
 
-## 9. Regular optimization run
+## 10. Regular optimization run
 
 Run this loop on a schedule for each game project, one change per run:
 
 1. Read the snapshot and the last episodes. Record per state: wins/target, trained decisions, entropy, KL,
-   learning-rate scale, typical end reason (win, damage, death, timeout).
-2. Pick the earliest state that is not mastered. Look at two recent replays of it (frames plus status).
-3. Find the single biggest blocker with the table in section 7. If it is a game mechanic, reproduce it
-   offline (discovery, explorer, steering, RAM poke) before touching code.
-4. Make the smallest fix in the game package (detector, `describe()`, reward, transition, question), or in the
-   engine only when it applies to every game. Add or update a test that pins the mechanic.
-5. `ruff check`, `ruff format`, `pytest` in this project (and the engine when it changed), then commit with a message that states
-   the evidence, and deploy.
+   learning-rate scale, hint-following rate, typical end reason (win, hit, death, timeout), and the full-run
+   win rate.
+2. Pick the earliest state that is not mastered, or for full runs the state where most attempts end. Look at
+   two recent attempts of it (frames plus status).
+3. Find the single biggest blocker with the table in section 8. If it is a game mechanic, reproduce it
+   offline (discovery, explorer, scripted hint player, RAM poke) before touching code.
+4. Make the smallest fix in the game package (detector, catalogue, `describe()`, hint, reward, transition,
+   question), or in the engine only when it applies to every game. Add or update a test that pins the mechanic.
+5. `ruff check`, `ruff format`, `pytest` in this project (and the engine when it changed), then commit with a
+   message that states the evidence, and deploy.
 6. After the next update cycle, confirm the metric moved; revert the change if it made the state worse.
 7. Update `NOTES.md` with what was verified, what was ruled out, and the next open question.
 
 Guardrails: never bump the engine version, never delete training data or reset models without the owner's
-request, never commit secrets or ROMs, and keep every commit buildable.
+request, never commit secrets or ROMs, never hardcode level knowledge into hints, and keep every commit
+buildable.
