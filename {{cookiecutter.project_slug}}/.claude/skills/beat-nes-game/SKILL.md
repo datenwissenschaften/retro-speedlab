@@ -1,6 +1,6 @@
 ---
 name: beat-nes-game
-description: Turn this generated retro-speedlab project into a game package (automatic RAM discovery), learn the game's mechanics, enemies and power-ups, design the state machine, hints and rewards, then train, diagnose and regularly optimize a retro-speedlab game package that beats an NES level with Laya (one Laya model per state machine state). Use when creating a new game package, when a game's training stalls or collapses, when asked to review rewards, hints, detections or curriculum progress, or on a scheduled optimization run for a game project.
+description: Turn this generated retro-speedlab project into a game package (automatic RAM discovery), learn the game's mechanics, enemies and power-ups, map each level and where it is safe, design the state machine, hints and rewards, then train, diagnose and regularly optimize a retro-speedlab game package that beats an NES level with Laya (one Laya model per state machine state). Use when creating a new game package, when a game's training stalls or collapses, when asked to review rewards, hints, detections or curriculum progress, or on a scheduled optimization run for a game project.
 ---
 
 # Beat an NES game with Laya
@@ -213,6 +213,8 @@ Hints must be generic rules that work in every level of the game, never level kn
 | attack or eat (`tongue`) | the target is within reach and straight ahead in the facing direction |
 | `blocked` / `jump` | while stuck (no movement for 12 frames), alternate every 12 frames between jumping and pushing on; a jump from standstill alone never frees the player |
 | `move_away`, `ahead` | a close enemy (under 48 px): the escape direction and whether it is in the facing direction |
+| `move` while exploring (`exploring`) | a searching state without any known target heads for the least visited neighbouring cell that the safety map does not mark as dangerous or blocked |
+| `unsafe` | the directions whose next cell has hurt the player before, from the safety map (section 6) |
 
 **Routes are learned, not written.** Straight lines to a remembered place run into walls and ledges. The
 engine's `Landmarks` records the trail a state walked (a point every 8 px, restarted on respawn jumps) when it
@@ -223,9 +225,36 @@ Never hardcode coordinates, routes or seeds into the game package.
 `jump` when an enemy is `ahead`) and run it through the whole level from the start savestate with the state
 machine. If it cannot win, Laya cannot learn a win from those hints: find where it gets stuck, look at the
 frame, and fix the state, hint or detector first. Measure afterwards how often Laya follows each state's hint
-(section 7) to see what it learned beyond them.
+(section 9) to see what it learned beyond them. Run it in every level you train, several attempts in a row
+with shared memory, because exploring and the safety map only pay off across attempts.
 
-## 6. Actions
+## 6. Map the level and learn where it is safe
+
+The player must understand the level as a map: where it is, where it has been, where things hurt and where it
+cannot go. Build that map from the player's own play, in world coordinates, and keep it per level.
+
+- **World coordinates first.** Combine screen and position bytes into one continuous location (section 2)
+  and use it for everything spatial: routes, exploration, safety, danger spots on the stream.
+- **One map per level (savestate)**, stored next to the level's landmarks (the engine's
+  `Landmarks.safety`, a `SafetyMap` in 16 px cells) so it survives restarts and deploys and is cleared by a
+  model reset.
+- **Record what happens where**: every hit or lost life marks its cell as `danger`; every cell the player got
+  stuck pushing toward marks `blocked`. Only damage the game really deals counts (not the exit draining
+  weight). Record facts, never hand-entered coordinates.
+- **Exploration memory**: count visits per cell across attempts. A searching state without a target heads for
+  the least visited neighbouring cell, weighted by the map (danger 20, blocked 10 visits), so the player works
+  its way along the frontier instead of pushing into the first wall. Mark the direction the hint suggested,
+  not the direction the player last moved, when it gets stuck: after hitting a wall the player still faces
+  the way it came.
+- **Use the map in hints, not as a hidden script**: `unsafe` directions, the exploring `move`, routes around
+  blocked cells. Laya still decides; rewards stay the same (hits −5, lives −10).
+- **Look at the map**: dump the danger and blocked cells of a level and compare them with the danger spots on
+  the stream and with frames at those coordinates. Clusters of danger reveal hazards or enemies that need a
+  detector; long blocked walls reveal ledges that need a jump.
+- **Test it**: a hit marks its cell, a restart keeps the map, a reset clears it, and the exploring hint
+  avoids a marked cell.
+
+## 7. Actions
 
 - `ACTION_TABLE` has shape `(actions, frames, buttons)` in the order of `env.buttons`; 4 frames per decision
   works well.
@@ -236,7 +265,7 @@ frame, and fix the state, hint or detector first. Measure afterwards how often L
   jumping onto ledges may need the direction held). Changing actions changes the models' options and needs a
   fresh start.
 
-## 7. How Laya learns in the engine (verify before changing)
+## 8. How Laya learns in the engine (verify before changing)
 
 - One checkpoint per state: `<paths.models>/<game>/<savestate>/<State>/laya.pt` (weights, 8-bit AdamW,
   trust region, trained decisions). The active state's model is swapped into the single GPU slot; the next
@@ -258,7 +287,7 @@ frame, and fix the state, hint or detector first. Measure afterwards how often L
   `MODEL_LAYOUT` value in `training/identity.py`; training then starts fresh once. Moving code (for example
   into `hints.py`) without changing the observation needs no reset. Never use the engine version for this.
 
-## 8. Diagnose a run
+## 9. Diagnose a run
 
 Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.savestate_curriculum`, `summary`
 with `full_run_episodes` and `full_run_wins`, `server.release`) and `/api/live/episode`,
@@ -276,14 +305,15 @@ stuck.
 | Probabilities near uniform for a long time | entropy pressure or no reward signal | check the entropy constant and the state's rewards |
 | Laya ignores the hint in a searching state | exploration reward pulls elsewhere | stop exploration once a route is known |
 | Stuck at the same place until the timeout | straight-line hint into a wall | check the route and the stuck alternation with the scripted player |
-| Repeated hits at the same place | undetected enemy or hazard | find it in the frames, add a template, verify |
+| Stuck in the first corner of a new level | no target known, no hint | check the exploring hint and that stuck directions are marked `blocked` |
+| Repeated hits at the same place | undetected enemy or hazard | find it in the frames and the safety map, add a template, verify |
 | Weight or health drains steadily | hazard or time effect | reproduce idle and in the hazard, then add it as a fact |
 | Episodes time out in a searching state | target never seen | verify the detector on that screen; check the exploration reward |
 | A state never gains wins | transition condition never fires | reproduce with the explorer or steering, then fix the condition |
 | The player reaches the exit but no win | the attempt ends before the win flag | time the win (section 2) and stop charging what the exit does |
 | Curriculum checkpoint deleted repeatedly | score stagnation from a bad start | inspect the checkpoint frame |
 
-## 9. Deploy
+## 10. Deploy
 
 - Build an image from the package plus the committed engine (a Dockerfile with a Node stage for the
   dashboard, `python -m stable_retro.import roms`, `ffmpeg`, and GPU access), for example with Dokku
@@ -303,7 +333,7 @@ stuck.
 - The stream plays every attempt to its end. Between new attempts it shows random full or successful runs,
   labelled as replays and not live training.
 
-## 10. Regular optimization run
+## 11. Regular optimization run
 
 Run this loop on a schedule for each game project, one change per run:
 
@@ -312,7 +342,7 @@ Run this loop on a schedule for each game project, one change per run:
    win rate.
 2. Pick the earliest state that is not mastered, or for full runs the state where most attempts end. Look at
    two recent attempts of it (frames plus status).
-3. Find the single biggest blocker with the table in section 8. If it is a game mechanic, reproduce it
+3. Find the single biggest blocker with the table in section 9. If it is a game mechanic, reproduce it
    offline (discovery, explorer, scripted hint player, RAM poke) before touching code.
 4. Make the smallest fix in the game package (detector, catalogue, `describe()`, hint, reward, transition,
    question), or in the engine only when it applies to every game. Add or update a test that pins the mechanic.
