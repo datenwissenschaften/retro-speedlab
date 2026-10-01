@@ -229,3 +229,6 @@ __marimo__/
 # Retro Speedlab analysis output
 discovery/
 explore/
+
+# Retro Speedlab daily agent logs
+agent/logs/

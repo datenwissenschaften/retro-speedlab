@@ -64,6 +64,33 @@ To adapt the generated project to another game, replace the action mapping,
 RAM offsets, and state/reward logic, then update `training.game` and
 `training.savestate`.
 
+## Self-learning on a server
+
+The project is meant to learn the game by itself: training runs around the clock
+on a GPU server, and once a day Claude Code runs there unattended
+(`agent/daily.sh`, prompt in `agent/PROMPT.md`). It measures the progress, makes
+one verified change to the game package (RAM map, states, detectors, hints,
+rewards, savestates for newly reached levels), tests it, commits, deploys and
+writes a report into `agent/reports/`. It follows the skill in
+`.claude/skills/beat-nes-game/SKILL.md`; the permissions in
+`.claude/settings.json` forbid `sudo`, pushing and editing the training data.
+
+On the server, clone this project into your home folder, install
+[Claude Code](https://claude.com/claude-code), store a token from
+`claude setup-token` and enable the daily timer:
+
+```bash
+mkdir -p ~/.config/speedlab && chmod 700 ~/.config/speedlab
+echo "CLAUDE_CODE_OAUTH_TOKEN=<token>" > ~/.config/speedlab/claude.env
+mkdir -p ~/.config/systemd/user
+cp agent/systemd/speedlab-daily.* ~/.config/systemd/user/
+loginctl enable-linger "$USER"
+systemctl --user daemon-reload && systemctl --user enable --now speedlab-daily.timer
+```
+
+Write the server specifics (training data folder, dashboard address, how to
+deploy and read logs) into `NOTES.md`; the daily run reads them there.
+
 ## Quality checks
 
 ```bash

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": ["Bash", "Read", "Edit", "Write", "Glob", "Grep"],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(git push:*)",
+      "Bash(rm -rf /mnt:*)",
+      "Edit(/mnt/**)",
+      "Write(/mnt/**)"
+    ]
+  }
+}

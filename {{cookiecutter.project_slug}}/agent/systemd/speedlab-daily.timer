@@ -1,0 +1,9 @@
+[Unit]
+Description=Run the {{ cookiecutter.project_name }} optimization once per day
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target
