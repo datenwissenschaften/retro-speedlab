@@ -1,8 +1,0 @@
-[Unit]
-Description=Daily Claude Code optimization run for {{ cookiecutter.project_name }}
-
-[Service]
-Type=oneshot
-WorkingDirectory=%h/{{ cookiecutter.project_slug }}
-ExecStart=%h/{{ cookiecutter.project_slug }}/agent/daily.sh
-TimeoutStartSec=5h

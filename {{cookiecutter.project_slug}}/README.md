@@ -75,21 +75,26 @@ writes a report into `agent/reports/`. It follows the skill in
 `.claude/skills/beat-nes-game/SKILL.md`; the permissions in
 `.claude/settings.json` forbid `sudo`, pushing and editing the training data.
 
-On the server, clone this project into your home folder, install
-[Claude Code](https://claude.com/claude-code), store a token from
-`claude setup-token` and enable the daily timer:
+Training and the daily run both live in one [Dokku](https://dokku.com) app on a
+GPU server. Every value the scripts need (Dokku host, app, data and workspace
+folders, schedule, git identity) is in the `dokku` and `agent` sections of
+`config.yaml`. Once:
 
 ```bash
-mkdir -p ~/.config/speedlab && chmod 700 ~/.config/speedlab
-echo "CLAUDE_CODE_OAUTH_TOKEN=<token>" > ~/.config/speedlab/claude.env
-mkdir -p ~/.config/systemd/user
-cp agent/systemd/speedlab-daily.* ~/.config/systemd/user/
-loginctl enable-linger "$USER"
-systemctl --user daemon-reload && systemctl --user enable --now speedlab-daily.timer
+dokku/setup.sh
+ssh <dokku.host> config:set --no-restart <dokku.app> CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>
 ```
 
-Write the server specifics (training data folder, dashboard address, how to
-deploy and read logs) into `NOTES.md`; the daily run reads them there.
+Clone this project into the workspace folder on the server, then deploy:
+
+```bash
+dokku/deploy.sh
+```
+
+Each deploy registers the daily run with Dokku's scheduler (`app.json`). It runs
+in a one-off container of the app with the workspace mounted at `/workspace`.
+Write the server specifics (training data folder, dashboard address) into
+`NOTES.md`; the daily run reads them there.
 
 ## Quality checks
 

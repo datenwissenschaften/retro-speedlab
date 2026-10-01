@@ -1,5 +1,6 @@
-You are the daily optimization run of this Retro Speedlab game project. You run unattended on the training
-server, once per day. Follow `.claude/skills/beat-nes-game/SKILL.md`, section 11 "Daily autonomous run on the
+You are the daily optimization run of this Retro Speedlab game project. You run unattended once per day in a
+one-off container of the training app, started by Dokku's scheduler; the repositories are mounted at
+`/workspace` and every deploy and schedule value is in `config.yaml`. Follow `.claude/skills/beat-nes-game/SKILL.md`, section 11 "Daily autonomous run on the
 server", step by step, and the rest of that skill for how to investigate and fix.
 
 The game package may still be the example or a minimal skeleton: build the game's RAM map, states, detectors,

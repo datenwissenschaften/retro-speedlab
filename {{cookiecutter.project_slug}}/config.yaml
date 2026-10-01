@@ -25,3 +25,20 @@ ui:
   port: 18080
   max_episodes: 1000
   release: local
+
+twitch:
+  enabled: false
+
+dokku:
+  host: dokku
+  server: dokku-host
+  app: {{ cookiecutter.project_slug }}
+  data_dir: /var/lib/{{ cookiecutter.project_slug }}
+  workspace_dir: /srv/{{ cookiecutter.project_slug }}-workspace
+  host_address: 172.17.0.1
+
+agent:
+  schedule: "30 3 * * *"
+  hours: 4
+  git_name: {{ cookiecutter.project_name }} daily agent
+  git_email: {{ cookiecutter.author_email }}
