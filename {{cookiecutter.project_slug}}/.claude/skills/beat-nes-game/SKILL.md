@@ -272,6 +272,11 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   state's checkpoint is prefetched into RAM and saves are written in the background.
 - Once every state is mastered, every episode is a full run from the start savestate, and each state's model
   takes over when its phase begins.
+- Levels are trained in order: `training.savestates` lists them, and the first level without 8 full-run wins is
+  trained until it has them, then the next. Only when every level is beaten do the levels take turns every
+  `training.rotation_minutes` (2 hours) as speedruns, with an extra cost of 0.005 per frame so faster wins
+  score higher. The current level and turn survive restarts and deploys.
+- Each level keeps its own models, curriculum savestates, landmarks, routes, safety map, story and statistics.
 - Options are shuffled by a stable hash of state and question. Without it Laya gives about 97% to the first
   listed option and every fresh model starts stuck on one action.
 - Group-relative policy gradient with importance weights for the exploration mixture (20% random actions,
@@ -333,23 +338,36 @@ stuck.
 - The stream plays every attempt to its end. Between new attempts it shows random full or successful runs,
   labelled as replays and not live training.
 
-## 11. Regular optimization run
+## 11. Daily autonomous run on the server
 
-Run this loop on a schedule for each game project, one change per run:
+The project trains on the server around the clock, and once a day Claude Code runs headless next to it
+(`agent/daily.sh`, started by a systemd timer, prompt in `agent/PROMPT.md`) to check progress, change the code
+and keep learning. The repositories on the server are the source; people pull from them.
 
-1. Read the snapshot and the last episodes. Record per state: wins/target, trained decisions, entropy, KL,
-   learning-rate scale, hint-following rate, typical end reason (win, hit, death, timeout), and the full-run
-   win rate.
-2. Pick the earliest state that is not mastered, or for full runs the state where most attempts end. Look at
-   two recent attempts of it (frames plus status).
-3. Find the single biggest blocker with the table in section 9. If it is a game mechanic, reproduce it
-   offline (discovery, explorer, scripted hint player, RAM poke) before touching code.
-4. Make the smallest fix in the game package (detector, catalogue, `describe()`, hint, reward, transition,
-   question), or in the engine only when it applies to every game. Add or update a test that pins the mechanic.
-5. `ruff check`, `ruff format`, `pytest` in this project (and the engine when it changed), then commit with a
-   message that states the evidence, and deploy.
-6. After the next update cycle, confirm the metric moved; revert the change if it made the state worse.
-7. Update `NOTES.md` with what was verified, what was ruled out, and the next open question.
+1. **Measure.** Read the dashboard (`/api/snapshot`: per-level summary in `summary.by_savestate`,
+   `metadata.curricula`, `metadata.stories`, `metadata.run`), the live attempts (`/api/live/episode`,
+   `/api/live/frames`), and per level the landmarks, routes and safety map in the training data. Compare with
+   the last reports in `agent/reports/`. Record per level: attempts, full-run wins, the curriculum phase that
+   blocks, where attempts end, hint-following rate, and whether yesterday's change moved its metric.
+2. **Decide one change.** Pick the level being trained (the first unbeaten one) and its biggest blocker with
+   the table in section 9. Revert yesterday's change first if its metric got worse.
+3. **Reproduce before fixing.** Copy savestates and landmarks from the training data and reproduce the
+   blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
+   mechanics or coordinates; cut templates from real frames and verify them.
+4. **Fix, test, ship.** The smallest change in the game package (or in the engine when it applies to every
+   game), with a test that pins it. `ruff check`, `ruff format`, `pytest`, commit with the evidence in the
+   message, deploy, and confirm the new release runs without errors.
+5. **Grow the game.** When a level is beaten and the next level has no savestate yet, create it: play from the
+   level's winning checkpoint through the level end, find the RAM that marks the new level, save the
+   emulator state at its start as `savestates/LevelN.state` (gzip, like stable-retro states), verify it loads,
+   and append it to `training.savestates` in both configs. New levels may need new states, enemies,
+   power-ups or hazards: catalogue them (section 2) before training on them.
+6. **Report.** Write `agent/reports/YYYY-MM-DD.md`: the measurements, the decision and its evidence, the change
+   and its commit, the metric to check tomorrow, and open questions. Update `NOTES.md` with verified facts.
+
+Rules for the unattended run: one change per day; never reset models, delete training data or edit files of
+the running training; never bump the engine version; never commit secrets or ROMs; stop and report instead of
+deploying when tests fail or the evidence is unclear.
 
 Guardrails: never bump the engine version, never delete training data or reset models without the owner's
 request, never commit secrets or ROMs, never hardcode level knowledge into hints, and keep every commit
