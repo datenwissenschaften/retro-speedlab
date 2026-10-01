@@ -28,6 +28,8 @@ ui:
 
 twitch:
   enabled: false
+  dialogs: false
+  dialog_model: google/gemma-4-31b-it:free
 
 dokku:
   host: dokku
