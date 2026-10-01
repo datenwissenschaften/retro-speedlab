@@ -29,7 +29,10 @@ ui:
 twitch:
   enabled: false
   dialogs: false
-  dialog_model: google/gemma-4-31b-it:free
+  dialog_models:
+    - google/gemma-4-31b-it:free
+    - google/gemma-4-26b-a4b-it:free
+    - nvidia/nemotron-3-super-120b-a12b:free
 
 dokku:
   host: dokku
