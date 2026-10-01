@@ -6,6 +6,7 @@ source "${PROJECT_DIR}/dokku/settings.sh"
 readonly DOKKU_HOST="$(setting dokku.host)"
 readonly HOST_ADDRESS="$(setting dokku.host_address)"
 readonly RUN_HOURS="$(setting agent.hours)h"
+readonly MODEL="$(setting agent.model)"
 readonly AGENT_KEY="/workspace/.ssh/agent_key"
 
 git config --global --add safe.directory '*'
@@ -18,7 +19,7 @@ printf 'Host %s\n  HostName %s\n  User dokku\n  IdentityFile %s\n  IdentitiesOnl
 cd "${PROJECT_DIR}"
 mkdir -p agent/logs
 log="agent/logs/$(date -u +%Y-%m-%dT%H%M).jsonl"
-timeout "${RUN_HOURS}" claude -p "$(cat agent/PROMPT.md)" \
+timeout "${RUN_HOURS}" claude -p "$(cat agent/PROMPT.md)" --model "${MODEL}" \
     --permission-mode acceptEdits \
     --allowedTools Bash Read Edit Write Glob Grep \
     --disallowedTools "Bash(sudo:*)" "Bash(git push:*)" "Bash(rm -rf /app:*)" "Edit(/app/working/**)" "Write(/app/working/**)" \

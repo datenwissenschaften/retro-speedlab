@@ -351,15 +351,19 @@ schedule value comes from `config.yaml`, nothing is set in scripts.
    `metadata.curricula`, `metadata.stories`, `metadata.run`), the live attempts (`/api/live/episode`,
    `/api/live/frames`), and per level the landmarks, routes and safety map in the training data. Compare with
    the last reports in `agent/reports/`. Record per level: attempts, full-run wins, the curriculum phase that
-   blocks, where attempts end, hint-following rate, and whether yesterday's change moved its metric.
-2. **Decide one change.** Pick the level being trained (the first unbeaten one) and its biggest blocker with
-   the table in section 9. Revert yesterday's change first if its metric got worse.
+   blocks, where attempts end, hint-following rate, the action probabilities, and whether yesterday's change
+   moved its metric.
+2. **Decide the change.** Pick the level being trained (the first unbeaten one) and its biggest blocker with
+   the table in section 9. A constant reward is always the first blocker: without a learning signal every
+   action stays equally likely. Revert yesterday's change first if its metric got worse.
 3. **Reproduce before fixing.** Copy savestates and landmarks from the training data and reproduce the
    blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
    mechanics or coordinates; cut templates from real frames and verify them.
 4. **Fix, test, ship.** The smallest change in the game package (or in the engine when it applies to every
    game), with a test that pins it. `ruff check`, `ruff format`, `pytest`, commit with the evidence in the
-   message, deploy, and confirm the new release runs without errors.
+   message, deploy, and watch the live training for 10 minutes: no errors, non-zero rewards, action
+   probabilities no longer uniform. When an investigation is inconclusive, try another way and narrow the
+   change to what is verified instead of stopping; use the whole time budget.
 5. **Grow the game.** When a level is beaten and the next level has no savestate yet, create it: play from the
    level's winning checkpoint through the level end, find the RAM that marks the new level, save the
    emulator state at its start as `savestates/LevelN.state` (gzip, like stable-retro states), verify it loads,
@@ -368,9 +372,9 @@ schedule value comes from `config.yaml`, nothing is set in scripts.
 6. **Report.** Write `agent/reports/YYYY-MM-DD.md`: the measurements, the decision and its evidence, the change
    and its commit, the metric to check tomorrow, and open questions. Update `NOTES.md` with verified facts.
 
-Rules for the unattended run: one change per day; never reset models, delete training data or edit files of
-the running training; never bump the engine version; never commit secrets or ROMs; stop and report instead of
-deploying when tests fail or the evidence is unclear.
+Rules for the unattended run: ship at least one verified change that improves what the model learns from;
+never reset models, delete training data or edit files of the running training; never bump the engine
+version; never commit secrets or ROMs; do not deploy when tests fail, and revert when a deploy breaks.
 
 Guardrails: never bump the engine version, never delete training data or reset models without the owner's
 request, never commit secrets or ROMs, never hardcode level knowledge into hints, and keep every commit
