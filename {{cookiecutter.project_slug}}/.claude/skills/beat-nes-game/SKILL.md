@@ -1,6 +1,6 @@
 ---
 name: beat-nes-game
-description: Turn this generated retro-speedlab project into a game package (automatic RAM discovery), learn the game's mechanics, enemies and power-ups, map each level and where it is safe, design the state machine, hints and rewards, then train, diagnose and regularly optimize a retro-speedlab game package that beats an NES level with Laya (one Laya model per state machine state). Use when creating a new game package, when a game's training stalls or collapses, when asked to review rewards, hints, detections or curriculum progress, or on a scheduled optimization run for a game project.
+description: Turn this generated retro-speedlab project into a game package (automatic RAM discovery), research online how each level is beaten and reproduce it, learn the game's mechanics, enemies and power-ups, map each level and where it is safe, design the state machine, hints and rewards, then train, diagnose and regularly optimize a retro-speedlab game package that beats an NES level with Laya (one Laya model per state machine state). Use when creating a new game package, when a game's training stalls or collapses, when asked to review rewards, hints, detections or curriculum progress, or on a scheduled optimization run for a game project.
 ---
 
 # Beat an NES game with Laya
@@ -12,8 +12,9 @@ detectors, actions, states, hints, rewards. The engine owns learning, curriculum
 small verified steps, follow the engine's `AGENTS.md` (no defaults, fail fast, ruff, loguru, python-box, no
 comments), and record every verified game fact in `NOTES.md`.
 
-The order matters: first understand the whole game, then design states, hints and rewards from that
-understanding, then prove that a player who only follows the hints can win, and only then train.
+The order matters: first research how the game is beaten, verify it and understand the whole game, then
+design states, hints and rewards from that understanding, then prove that a player who only follows the hints
+can win, and only then train.
 
 Run every command from the project root. Placeholders used below:
 
@@ -64,9 +65,39 @@ The engine version is the engine maintainer's decision: never bump it from a gam
 
 ## 2. Learn the whole game before writing states
 
-Never guess mechanics. Verify each one in the emulator and write it into `NOTES.md` with the evidence. A
-state machine built on a wrong mechanic cannot be trained into a win: in Snake Rattle 'n' Roll the weight
-drain while entering the exit counted as damage and ended every winning attempt before the win flag set.
+Never guess mechanics. Learn them from published sources, verify each one in the emulator and write it into
+`NOTES.md` with the evidence. A state machine built on a wrong mechanic cannot be trained into a win: in Snake
+Rattle 'n' Roll the weight drain while entering the exit counted as damage and ended every winning attempt
+before the win flag set.
+
+### Research how each level is beaten
+
+Before measuring anything, find out from published sources what a player has to do to beat the level being
+trained. Use `WebSearch` and `WebFetch`:
+
+- **Walkthroughs, guides and the original manual** (GameFAQs, StrategyWiki, fan sites, manual scans): the
+  level's goal, the order of its gates (what opens the exit), the items, enemies and hazards, and how the level
+  ends.
+- **RAM maps** (Data Crystal, TASVideos game resources): candidate addresses for lives, position, level,
+  timers and progress flags.
+- **Speedruns and tool-assisted runs** (speedrun.com, TASVideos submissions and their videos): the fastest
+  route and the tricks that skip parts of it, for the speedrun phase later.
+
+Write the findings into `NOTES.md` under `## Walkthrough`, one subsection per level: numbered steps from the
+level start to the level end, each with its source URL, and the candidate RAM addresses with theirs. Mark every
+step and address `unverified` until it is measured.
+
+Published knowledge is a hypothesis, not a fact:
+
+- **Verify each step in the emulator** before building on it (RAM discovery and gate tests below). When the
+  emulator disagrees with a source, the emulator wins: note the conflict and correct the step.
+- **Reproduce the walkthrough.** A scripted player built on the verified RAM (position, targets, flags) plays
+  the steps from the start savestate to the level end, saving a savestate at each gate. When it cannot beat
+  the level, Laya cannot learn to: find the step that fails and fix the understanding before training.
+- **Teach the behaviour, not the moves.** The verified steps become the gates of the state machine (section
+  3), the targets to mark (markers), the progress rewards (section 4) and the curriculum savestates, so Laya
+  is told about and rewarded for each step and learns to reproduce it. Hints stay generic rules (section 5):
+  never copy coordinates, routes or button sequences from a source into the game package.
 
 ### RAM discovery
 
@@ -115,7 +146,7 @@ drain while entering the exit counted as damage and ended every winning attempt 
   Put the discovered progress bytes (counters, flags) in `--cell` with a high `--priority`. Continue from a
   milestone with `--start explore/<milestone>.state`. If a gate value is never reached, the state machine
   cannot pass that gate: fix the gate before training.
-- **List every gate** of the level: what must happen before the next part opens (eat to a weight, ring a
+- **List every gate** of the level, starting from the walkthrough's steps: what must happen before the next part opens (eat to a weight, ring a
   bell, collect a key, defeat a boss), and what undoes it (a hit costs weight, a death resets a counter).
 - **Test mechanics directly**: restore savestates with `env.em.set_state(bytes); env.data.reset();
   env.data.update_ram()` and poke RAM with `env.unwrapped.data.memory.assign(address, "|u1", value)`. Leave
@@ -355,7 +386,9 @@ schedule value comes from `config.yaml`, nothing is set in scripts.
    moved its metric.
 2. **Decide the change.** Pick the level being trained (the first unbeaten one) and its biggest blocker with
    the table in section 9. A constant reward is always the first blocker: without a learning signal every
-   action stays equally likely. Revert yesterday's change first if its metric got worse.
+   action stays equally likely. Revert yesterday's change first if its metric got worse. When `NOTES.md` has
+   no walkthrough for the level, research it first (section 2); afterwards the first unverified or
+   unrewarded step of the walkthrough is the next blocker.
 3. **Reproduce before fixing.** Copy savestates and landmarks from the training data and reproduce the
    blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
    mechanics or coordinates; cut templates from real frames and verify them.
@@ -367,7 +400,7 @@ schedule value comes from `config.yaml`, nothing is set in scripts.
 5. **Grow the game.** When a level is beaten and the next level has no savestate yet, create it: play from the
    level's winning checkpoint through the level end, find the RAM that marks the new level, save the
    emulator state at its start as `savestates/LevelN.state` (gzip, like stable-retro states), verify it loads,
-   and append it to `training.savestates` in both configs. New levels may need new states, enemies,
+   and append it to `training.savestates` in both configs. Research the new level's walkthrough. New levels may need new states, enemies,
    power-ups or hazards: catalogue them (section 2) before training on them.
 6. **Report.** Write `agent/reports/YYYY-MM-DD.md`: the measurements, the decision and its evidence, the change
    and its commit, the metric to check tomorrow, and open questions. Update `NOTES.md` with verified facts.

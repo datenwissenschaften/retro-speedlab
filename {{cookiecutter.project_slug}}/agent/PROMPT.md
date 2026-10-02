@@ -12,7 +12,9 @@ tests fail or the deploy breaks and you reverted it.
 
 ## Order of work
 
-Pick the first rung that is not done yet for the level being trained (the first unbeaten one):
+Pick the first rung that is not done yet for the level being trained (the first unbeaten one). When
+`NOTES.md` has no walkthrough for that level yet, research it first in this run; the rungs then follow its
+steps in order, and the goal is a model that reproduces them.
 
 1. **Learning signal.** If the reward is constant (for example a skeleton `Play` state returning 0), the model
    picks every action with equal probability and learns nothing. Find the variables you can verify fast
@@ -20,7 +22,8 @@ Pick the first rung that is not done yet for the level being trained (the first 
    or progress. A small verified reward beats a complete unverified one.
 2. **RAM map.** Lives, score, level, player position, game mode. Add each field to `GameRam` once verified,
    with a test.
-3. **Phases.** Split the level into states with their own reward and success condition (section 3).
+3. **Phases.** Split the level into states at the walkthrough's verified gates, each with its own reward and
+   success condition (section 3).
 4. **Detectors, hazards and hints** (sections 4 to 6), then **new levels** (section 11, step 5) and
    **speedrun** (section 8).
 
@@ -31,7 +34,9 @@ Pick the first rung that is not done yet for the level being trained (the first 
   event. Narrow the change to what you verified instead of stopping because a part is unclear.
 - A variable counts as verified when it changes exactly at its event in at least two independent runs. Keep
   the evidence (frames, RAM values) in the commit message or the report.
-- Nothing about the game comes from memory or from other games; only what you measured.
+- Nothing about the game comes from memory or from other games. Find out online how the level is beaten
+  (skill section 2, "Research how each level is beaten"), cite the sources in `NOTES.md`, and build only on
+  what you then measured in the emulator.
 - Check the time with `date -u`. Stop exploring when 45 minutes are left, then test, deploy, verify and
   report.
 

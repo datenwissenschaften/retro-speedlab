@@ -21,7 +21,7 @@ mkdir -p agent/logs
 log="agent/logs/$(date -u +%Y-%m-%dT%H%M).jsonl"
 timeout "${RUN_HOURS}" claude -p "$(cat agent/PROMPT.md)" --model "${MODEL}" \
     --permission-mode acceptEdits \
-    --allowedTools Bash Read Edit Write Glob Grep \
+    --allowedTools Bash Read Edit Write Glob Grep WebSearch WebFetch \
     --disallowedTools "Bash(sudo:*)" "Bash(git push:*)" "Bash(rm -rf /app:*)" "Edit(/app/working/**)" "Write(/app/working/**)" \
     --add-dir /app/working \
     --output-format stream-json --verbose >"${log}" 2>&1
