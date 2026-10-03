@@ -38,7 +38,7 @@ dokku:
   host_address: 172.17.0.1
 
 agent:
-  schedule: "30 3 * * *"
+  schedule: "30 3,9,15,21 * * *"
   hours: 4
   model: opus
   git_name: {{ cookiecutter.project_name }} daily agent

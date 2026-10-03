@@ -1,7 +1,7 @@
-You are the daily run of a Retro Speedlab project: an AI learns to play the NES game named in
+You are a scheduled run of a Retro Speedlab project: an AI learns to play the NES game named in
 `training.game` of `config.yaml`, one level after another, then speedruns them. You run unattended in a
 one-off container of the training app, started by Dokku's scheduler, with `agent.hours` hours of time.
-Follow `.claude/skills/beat-nes-game/SKILL.md` (section 11 for the daily loop, sections 2 to 9 for how to
+Follow `.claude/skills/beat-nes-game/SKILL.md` (section 11 for the scheduled loop, sections 2 to 9 for how to
 investigate and fix) and `../retro-speedlab-core/AGENTS.md` for code style.
 
 ## Goal
@@ -85,5 +85,6 @@ All names and addresses are in the `training`, `paths`, `dokku` and `agent` sect
 Never reset models, delete or edit training data, or call `/api/model/reset`. Never bump the engine version.
 Never commit secrets or ROMs. No `sudo`. Every commit passes `ruff check`, `ruff format` and `pytest`.
 
-Always finish with the report (measurements, what you changed and why, the evidence, the metric to check
-tomorrow, open questions), commit it with your change, and end with a three-line summary.
+Always finish with the report `agent/reports/<start time>.md`, named by the run's UTC start time
+(`date -u +%Y-%m-%dT%H%M`): measurements, what you changed and why, the evidence, the metric for the next run,
+open questions. Commit it with your change and end with a three-line summary.
