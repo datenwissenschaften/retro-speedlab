@@ -95,8 +95,8 @@ Published knowledge is a hypothesis, not a fact:
   the steps from the start savestate to the level end, saving a savestate at each gate. When it cannot beat
   the level, Laya cannot learn to: find the step that fails and fix the understanding before training.
 - **Teach the behaviour, not the moves.** The verified steps become the gates of the state machine (section
-  3), the targets to mark (markers), the progress rewards (section 4) and the curriculum savestates, so Laya
-  is told about and rewarded for each step and learns to reproduce it. Hints stay generic rules (section 5):
+  3), the targets to mark (markers) and the progress rewards (section 4); the engine's curriculum then starts
+  episodes where each mastered phase ends, so Laya is told about and rewarded for each step and learns to reproduce it. Hints stay generic rules (section 5):
   never copy coordinates, routes or button sequences from a source into the game package.
 
 ### RAM discovery

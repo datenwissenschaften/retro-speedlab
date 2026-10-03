@@ -12,9 +12,10 @@ tests fail or the deploy breaks and you reverted it.
 
 ## Order of work
 
-Pick the first rung that is not done yet for the level being trained (the first unbeaten one). When
-`NOTES.md` has no walkthrough for that level yet, research it first in this run; the rungs then follow its
-steps in order, and the goal is a model that reproduces them.
+The goal of every run is that Laya reproduces the next step of the walkthrough for the level being trained
+(the first unbeaten one). When `NOTES.md` has no walkthrough for that level yet, research it first in this run.
+
+First the basics, each done once per game:
 
 1. **Learning signal.** If the reward is constant (for example a skeleton `Play` state returning 0), the model
    picks every action with equal probability and learns nothing. Find the variables you can verify fast
@@ -22,10 +23,24 @@ steps in order, and the goal is a model that reproduces them.
    or progress. A small verified reward beats a complete unverified one.
 2. **RAM map.** Lives, score, level, player position, game mode. Add each field to `GameRam` once verified,
    with a test.
-3. **Phases.** Split the level into states at the walkthrough's verified gates, each with its own reward and
-   success condition (section 3).
-4. **Detectors, hazards and hints** (sections 4 to 6), then **new levels** (section 11, step 5) and
-   **speedrun** (section 8).
+3. **Player marker.** A box on the player from the verified position (skill section 2, "Markers").
+
+Then every run works on **the next gate**: the first walkthrough step that Laya is not yet told about and
+rewarded for. Take it as far as the run gets, in this order:
+
+1. **Measure it.** Find the gate's objects and RAM (object kinds, flags, counters, thresholds) and verify them.
+2. **Mark it.** Boxes and `nearest_*` facts in `describe()` for what the step collects, operates or reaches,
+   proven on a contact sheet and pinned by a test.
+3. **Reach it.** A scripted player built on the verified RAM plays from the level start to the gate and
+   passes it. Save local savestates on the way to develop and test the next phase against.
+4. **Phase it.** Split the level into states at the gate (skill section 3), each with its own question,
+   reward and success condition. Once the phase before the gate is mastered, the engine starts every episode
+   from the checkpoint where the gate's phase begins, so Laya practises the gate itself instead of replaying
+   the level up to it.
+
+A hazard or enemy comes first only when it stops the scripted player from reaching the gate, or ends most
+attempts before the phase before the gate can be mastered. After the last gate come **new levels** (skill
+section 11, step 5) and **speedrun** (section 8).
 
 ## How to work
 
@@ -37,14 +52,14 @@ steps in order, and the goal is a model that reproduces them.
 - Nothing about the game comes from memory or from other games. Find out online how the level is beaten
   (skill section 2, "Research how each level is beaten"), cite the sources in `NOTES.md`, and build only on
   what you then measured in the emulator.
-- Check the time with `date -u`. Stop exploring when 45 minutes are left, then test, deploy, verify and
-  report.
+- Check the time with `date -u`. Stop exploring when 20 minutes are left, then test, deploy, watch the
+  release for 10 minutes and report.
 
 ## After the deploy
 
-Watch the live training for 10 minutes: the release runs without errors in the logs, rewards are non-zero,
-and the action probabilities on the dashboard are no longer uniform. If it breaks, revert, redeploy and say so
-in the report.
+Watch the live training for 10 minutes (use `Monitor` to sample the dashboard while you write the report): the
+release runs without errors in the logs, rewards are non-zero, and the action probabilities on the dashboard
+are no longer uniform. If it breaks, revert, redeploy and say so in the report.
 
 ## Where things are
 
