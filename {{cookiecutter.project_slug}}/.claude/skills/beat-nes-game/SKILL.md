@@ -87,6 +87,12 @@ Write the findings into `NOTES.md` under `## Walkthrough`, one subsection per le
 level start to the level end, each with its source URL, and the candidate RAM addresses with theirs. Mark every
 step and address `unverified` until it is measured.
 
+Tag every step as a **gate** or **optional**. A gate is a step the level cannot be finished without: what opens
+the exit and what that needs first (reach a weight, ring a bell, collect a key, defeat a boss, enter the door).
+Everything else is optional: points, bonus items, extra lives, enemies and hazards that can be avoided. Optional
+steps wait until every gate of the level is rewarded, unless one blocks a gate (an item the gate needs, a hazard
+that ends the attempts before the gate).
+
 Published knowledge is a hypothesis, not a fact:
 
 - **Verify each step in the emulator** before building on it (RAM discovery and gate tests below). When the
@@ -146,8 +152,9 @@ Published knowledge is a hypothesis, not a fact:
   Put the discovered progress bytes (counters, flags) in `--cell` with a high `--priority`. Continue from a
   milestone with `--start explore/<milestone>.state`. If a gate value is never reached, the state machine
   cannot pass that gate: fix the gate before training.
-- **List every gate** of the level, starting from the walkthrough's steps: what must happen before the next part opens (eat to a weight, ring a
-  bell, collect a key, defeat a boss), and what undoes it (a hit costs weight, a death resets a counter).
+- **List every gate** of the level, starting from the walkthrough's gate steps: what must happen before the
+  next part opens (eat to a weight, ring a bell, collect a key, defeat a boss), and what undoes it (a hit costs
+  weight, a death resets a counter).
 - **Test mechanics directly**: restore savestates with `env.em.set_state(bytes); env.data.reset();
   env.data.update_ram()` and poke RAM with `env.unwrapped.data.memory.assign(address, "|u1", value)`. Leave
   the player idle for a few thousand frames at each gate to separate time-based effects from damage.
@@ -388,8 +395,10 @@ scripts.
 2. **Decide the change.** Pick the level being trained (the first unbeaten one) and its biggest blocker with
    the table in section 9. A constant reward is always the first blocker: without a learning signal every
    action stays equally likely. Revert the previous run's change first if its metric got worse. When
-   `NOTES.md` has no walkthrough for the level, research it first (section 2); afterwards the first unverified
-   or unrewarded step of the walkthrough is the next blocker.
+   `NOTES.md` has no walkthrough for the level, research it first (section 2); afterwards the next blocker is
+   the first **gate** of the walkthrough that is not yet measured, marked, reached by the scripted player and
+   rewarded as its own phase. Skip optional steps until every gate of the level is done, unless one blocks a
+   gate.
 3. **Reproduce before fixing.** Copy savestates and landmarks from the training data and reproduce the
    blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
    mechanics or coordinates; cut templates from real frames and verify them.
@@ -397,7 +406,9 @@ scripts.
    game), with a test that pins it. `ruff check`, `ruff format`, `pytest`, commit with the evidence in the
    message, deploy, and watch the live training for 10 minutes: no errors, non-zero rewards, action
    probabilities no longer uniform. When an investigation is inconclusive, try another way and narrow the
-   change to what is verified instead of stopping; use the whole time budget.
+   change to what is verified instead of stopping. Use the whole time budget: after a verified deploy, take
+   the same gate one step further (measure, mark, reach, phase) and ship again, until the time to stop
+   exploring.
 5. **Grow the game.** When a level is beaten and the next level has no savestate yet, create it: play from the
    level's winning checkpoint through the level end, find the RAM that marks the new level, save the emulator
    state at its start as `savestates/LevelN.state` (gzip, like stable-retro states), verify it loads, and
