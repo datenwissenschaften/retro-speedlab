@@ -1,43 +1,29 @@
 import numpy as np
 
-_NUM_GENESIS_BUTTONS = 12
-(
-    _B,
-    _A,
-    _MODE,
-    _START,
-    _UP,
-    _DOWN,
-    _LEFT,
-    _RIGHT,
-    _C,
-    _Y,
-    _X,
-    _Z,
-) = range(_NUM_GENESIS_BUTTONS)
-
+NUM_NES_BUTTONS = 9
+_B, _UNUSED, _SELECT, _START, _UP, _DOWN, _LEFT, _RIGHT, _A = range(NUM_NES_BUTTONS)
 FRAMES_PER_DECISION = 4
 
-# Airstriker fires only when B goes from released to pressed, so every decision taps B once.
-# Untrained Laya starts closest to balanced with the options in this order.
-ACTIONS = (
-    (_RIGHT,),
-    (),
-    (_LEFT,),
-)
-
-ACTION_DESCRIPTIONS = {
-    "right": "dodge to the right while shooting",
-    "fire": "hold position and shoot straight ahead",
-    "left": "dodge to the left while shooting",
+HELD_ACTIONS = {
+    "up": ((_UP,), "hold up"),
+    "down": ((_DOWN,), "hold down"),
+    "left": ((_LEFT,), "hold left"),
+    "right": ((_RIGHT,), "hold right"),
 }
+TAPPED_ACTIONS = {
+    "b": ((_B,), "press B"),
+    "a": ((_A,), "press A"),
+}
+
+ACTION_DESCRIPTIONS = {name: description for name, (_, description) in {**HELD_ACTIONS, **TAPPED_ACTIONS}.items()}
 
 
 def action_table() -> np.ndarray:
-    table = np.zeros((len(ACTIONS), FRAMES_PER_DECISION, _NUM_GENESIS_BUTTONS), dtype=np.int8)
-    for index, buttons in enumerate(ACTIONS):
+    table = np.zeros((len(ACTION_DESCRIPTIONS), FRAMES_PER_DECISION, NUM_NES_BUTTONS), dtype=np.int8)
+    for index, (buttons, _) in enumerate(HELD_ACTIONS.values()):
         table[index, :, buttons] = 1
-        table[index, 0, _B] = 1
+    for index, (buttons, _) in enumerate(TAPPED_ACTIONS.values(), start=len(HELD_ACTIONS)):
+        table[index, 0, buttons] = 1
     return table
 
 

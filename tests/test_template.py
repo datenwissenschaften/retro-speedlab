@@ -35,14 +35,15 @@ EXPECTED_FILES = [
     "src/game/actions.py",
     "src/game/wrapper.py",
     "src/ram/__init__.py",
-    "src/ram/airstriker.py",
+    "src/ram/game.py",
     "src/states/__init__.py",
-    "src/states/survive.py",
+    "src/states/play.py",
     "tests/__init__.py",
-    "tests/_helpers.py",
-    "tests/test_actions.py",
-    "tests/test_ram_airstriker.py",
-    "tests/test_survive_state.py",
+    "tests/test_play.py",
+    "agent/daily.sh",
+    "agent/PROMPT.md",
+    "dokku/deploy.sh",
+    ".claude/skills/beat-nes-game/SKILL.md",
 ]
 
 # Directories that must never appear in a generated project: local editor,
@@ -71,7 +72,7 @@ def _generate(tmp_path: Path, extra_context: dict | None = None) -> Path:
 
 def test_default_generation_has_expected_structure(tmp_path):
     project_dir = _generate(tmp_path)
-    assert project_dir.name == "retro-speedlab"
+    assert project_dir.name == "retro-speedlab-game"
     for relative_path in EXPECTED_FILES:
         assert (project_dir / relative_path).is_file(), f"missing {relative_path}"
 
@@ -103,14 +104,12 @@ def test_generated_python_files_are_syntactically_valid(tmp_path):
         ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
-def test_pyproject_metadata_matches_custom_context(tmp_path):
+def test_metadata_and_config_match_custom_context(tmp_path):
     context = {
         "project_name": "My Custom Speedlab Bot",
-        "version": "1.2.3",
-        "description": "A custom retro training project.",
+        "game": "SuperMarioBros-Nes-v0",
         "author_name": "Jane Example",
         "author_email": "jane@example.com",
-        "license": "MIT",
     }
     project_dir = _generate(tmp_path, extra_context=context)
 
@@ -119,11 +118,14 @@ def test_pyproject_metadata_matches_custom_context(tmp_path):
     metadata = tomllib.loads((project_dir / "pyproject.toml").read_text(encoding="utf-8"))
     project = metadata["project"]
     assert project["name"] == "my-custom-speedlab-bot"
-    assert project["version"] == "1.2.3"
-    assert project["description"] == context["description"]
-    assert project["license"] == "MIT"
+    assert project["description"] == "Laya learns to beat SuperMarioBros-Nes-v0 by itself."
+    assert project["license"] == "GPL-3.0-only"
     assert project["authors"][0]["name"] == "Jane Example"
     assert project["authors"][0]["email"] == "jane@example.com"
+
+    config = yaml.safe_load((project_dir / "config.yaml").read_text(encoding="utf-8"))
+    assert config["training"]["game"] == "SuperMarioBros-Nes-v0"
+    assert config["agent"]["git_email"] == "jane@example.com"
 
 
 @pytest.mark.parametrize(
@@ -151,7 +153,7 @@ def test_config_yaml_paths_are_relative_and_portable(tmp_path):
         assert str(tmp_path) not in value
 
     assert config["upload"]["api_key"] is None
-    assert config["training"]["game"] == "Airstriker-Genesis-v0"
+    assert config["training"]["game"] == "SnakeRattleNRoll-Nes-v0"
 
 
 def test_pre_commit_hooks_are_pinned_to_immutable_refs(tmp_path):

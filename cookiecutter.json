@@ -1,15 +1,9 @@
 {
-  "project_name": "Retro Speedlab",
+  "project_name": "Retro Speedlab Game",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
-  "version": "0.0.1",
-  "description": "Teach the Laya decision model to beat a retro game by itself.",
+  "game": "SnakeRattleNRoll-Nes-v0",
   "author_name": "author_name",
   "author_email": "author_email@example.com",
-  "license": "GPL-3.0-only",
-  "python_requires": ">=3.12,<3.13",
-  "python_classifier": "3.12",
-  "python_target": "py312",
-  "development_status": "1 - Planning",
   "_copy_without_render": [
     ".claude/skills/*"
   ]

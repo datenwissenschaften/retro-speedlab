@@ -4,22 +4,22 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "{{ cookiecutter.project_slug }}"
-version = "{{ cookiecutter.version }}"
-description = "{{ cookiecutter.description }}"
+version = "0.1.0"
+description = "Laya learns to beat {{ cookiecutter.game }} by itself."
 readme = "README.md"
 authors = [
     { name = "{{ cookiecutter.author_name }}", email = "{{ cookiecutter.author_email }}" }
 ]
-license = "{{ cookiecutter.license }}"
-requires-python = "{{ cookiecutter.python_requires }}"
+license = "GPL-3.0-only"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "datenwissenschaften>=3.0.0,<4.0.0",
 ]
 classifiers = [
-    "Development Status :: {{ cookiecutter.development_status }}",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: {{ cookiecutter.python_classifier }}",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [dependency-groups]
@@ -30,7 +30,7 @@ dev = [
 
 [tool.ruff]
 line-length = 120
-target-version = "{{ cookiecutter.python_target }}"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

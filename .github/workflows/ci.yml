@@ -62,11 +62,9 @@ jobs:
           poetry run cookiecutter . --no-input \
             --output-dir "${{ runner.temp }}/generated" \
             project_name="Speedlab CI Smoketest" \
-            version="0.1.0" \
-            description="Deterministic CI smoke test project generated from the Retro Speedlab template." \
+            game="SuperMarioBros-Nes-v0" \
             author_name="CI Runner" \
-            author_email="ci@example.com" \
-            license="MIT"
+            author_email="ci@example.com"
 
       - name: Cache generated project's Poetry virtualenv
         uses: actions/cache@v4

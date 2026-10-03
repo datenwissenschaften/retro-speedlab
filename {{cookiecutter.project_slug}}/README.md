@@ -1,82 +1,66 @@
 # {{ cookiecutter.project_name }}
 
-{{ cookiecutter.description }}
+Laya learns to beat `{{ cookiecutter.game }}` by itself in the
+[Retro Speedlab](https://www.retrospeedlab.com). This game package starts as a
+skeleton that knows nothing about the game; scheduled Claude Code lab runs grow
+it from what they verify in the emulator, and the
+[Retro Speedlab Core](https://github.com/datenwissenschaften/retro-speedlab-core)
+engine turns it into a learning agent.
 
-This generated project is a complete Retro Speedlab example for
-`Airstriker-Genesis-v0`. It uses Stable Retro, Gymnasium, the
-`datenwissenschaften` state-machine environment, and the Laya decision model:
-Laya reads the game's RAM as text, answers the current state's question with a
-probability for every action, and learns from rewards.
+## The skeleton
+
+- `src/game/actions.py`: the plain NES buttons, held directions and tapped
+  `A`/`B`, as four-frame button sequences
+- `src/ram/game.py`: an empty `GameRam`, so Laya is told nothing yet
+- `src/states/play.py`: one `Play` state with the question "Which move?", no
+  reward, and attempts limited to 18,000 frames
+- `src/game/wrapper.py`: the `StateMachineGymWrapper` that wires them together
+- `tests/test_play.py`: pins down that the skeleton knows nothing yet
+
+Everything else (RAM map, phases, detectors, hints, rewards and savestates for
+new levels) is built by the lab runs, following
+`.claude/skills/beat-nes-game/SKILL.md`.
 
 ## Quick start
 
-Before starting training:
-
-1. Use a GPU with at least 6 GB of memory. The first start downloads the Laya
+1. Put the ROM Stable Retro expects for `{{ cookiecutter.game }}` into
+   `roms/`. It is imported automatically when training starts; never commit
+   it.
+2. Use a GPU with at least 6 GB of memory. The first start downloads the Laya
    checkpoint configured under `laya.checkpoint`.
-2. Leave `upload.api_key` set to `null` for local-only training. With a key,
-   every level Laya beats from its first frame and every short lab report is
-   uploaded to the Retro Speedlab API configured under `upload.url`.
+3. Install and train:
 
-Then install the project and start training:
+   ```bash
+   poetry install
+   poetry run python app.py
+   ```
 
-```bash
-poetry install
-poetry run python app.py
-```
-
-Training metrics and controls are available at <http://127.0.0.1:18080> while
-the process is running. <http://127.0.0.1:18080/stream> is a 1920×1080 stream
-view for OBS that replays every frame with Laya's decision behind it.
-
-## Included example game
-
-Airstriker is the redistributable demo game included with Stable Retro. Its
-`Level1` state and integration data are installed with the `stable-retro`
-dependency, so this example runs without adding a commercial ROM. The `roms/`
-directory remains available when replacing Airstriker with another legally
-obtained game.
+The dashboard runs at <http://127.0.0.1:18080>, and
+<http://127.0.0.1:18080/stream> is a 1920×1080 stream view for OBS that replays
+every frame with Laya's decision behind it.
 
 ## Configuration
 
-Edit `config.yaml` to control the game, the levels to train in order, the Laya
-checkpoint, output directories, the JSON training database, lab reports, upload
-credentials, and the local UI. All paths are relative to the project directory.
+`config.yaml` holds the game, the levels in training order, the Laya
+checkpoint, output directories, the JSON training database, lab reports,
+uploads, the local UI and the server deployment. All paths are relative to the
+project directory.
 
-Do not commit API keys. Keep `upload.api_key` set to `null` unless you intend to
-upload beaten levels and lab reports, and keep credential-bearing configuration
-out of version control.
+Keep `upload.api_key` set to `null` for local-only training. With a key, every
+level Laya beats from its first frame and every short lab report is uploaded to
+the Retro Speedlab API under `upload.url`. Never commit a real key.
 
-## Example design
+## Lab runs on a GPU server
 
-- `app.py` starts `LayaTrainer` with the Airstriker wrapper.
-- `src/game/actions.py` defines three described actions (fire, left, right) as
-  four-frame button sequences that tap fire once per decision.
-- `src/game/wrapper.py` registers the states, RAM layout, and actions.
-- `src/ram/airstriker.py` decodes score, lives, game-over state, and the ship's
-  position, and describes them to Laya as readable text.
-- `src/states/survive.py` rewards score and survival, penalizes lost lives, and
-  bounds episode duration.
-- `config.yaml` contains portable paths and reproducible training settings.
+Training runs around the clock in a [Dokku](https://dokku.com) app on a GPU
+server, and four times a day (`agent.schedule`) Claude Code runs there
+unattended in a one-off container of the same app (`agent/daily.sh`, prompt in
+`agent/PROMPT.md`). Each lab run measures the progress, ships at least one
+verified change to the game package, tests it, commits, deploys and writes a
+lab report into `agent/reports/`. The permissions in `.claude/settings.json`
+forbid `sudo`, pushing and editing the training data.
 
-To adapt the generated project to another game, replace the action mapping,
-RAM offsets, and state/reward logic, then update `training.game` and
-`training.savestates`.
-
-## Self-learning on a server
-
-The project is meant to learn the game by itself: training runs around the clock
-on a GPU server, and four times a day Claude Code runs there unattended
-(`agent/daily.sh`, prompt in `agent/PROMPT.md`, schedule in `agent.schedule`). It
-measures the progress, makes at least one verified change to the game package (RAM map, states, detectors, hints,
-rewards, savestates for newly reached levels), tests it, commits, deploys and
-writes a lab report into `agent/reports/`. It follows the skill in
-`.claude/skills/beat-nes-game/SKILL.md`; the permissions in
-`.claude/settings.json` forbid `sudo`, pushing and editing the training data.
-
-Training and the daily run both live in one [Dokku](https://dokku.com) app on a
-GPU server. Every value the scripts need (Dokku host, app, data and workspace
-folders, schedule, git identity) is in the `dokku` and `agent` sections of
+Every value the scripts need is in the `dokku` and `agent` sections of
 `config.yaml`. Once:
 
 ```bash
@@ -84,16 +68,15 @@ dokku/setup.sh
 ssh <dokku.host> config:set --no-restart <dokku.app> CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>
 ```
 
-Clone this project into the workspace folder on the server, then deploy:
+Clone this project into `dokku.workspace_dir` on the server, then deploy:
 
 ```bash
 dokku/deploy.sh
 ```
 
-Each deploy registers the daily run with Dokku's scheduler (`app.json`). It runs
-in a one-off container of the app with the workspace mounted at `/workspace`.
-Write the server specifics (training data folder, dashboard address) into
-`NOTES.md`; the daily run reads them there.
+Each deploy registers the lab run with Dokku's scheduler. Write server
+specifics (training data folder, dashboard address) into `NOTES.md`; the lab
+runs read them there.
 
 ## Quality checks
 
@@ -103,11 +86,6 @@ poetry run ruff format --check .
 poetry run pytest
 ```
 
-`tests/` covers the action table, RAM decoding, and reward/termination logic
-in `src/states/survive.py` without an emulator. It does not exercise
-`app.py` itself, which requires Stable Retro's emulator core and a GPU for
-Laya.
-
 ## License
 
-{{ cookiecutter.license }}
+GPL-3.0-only

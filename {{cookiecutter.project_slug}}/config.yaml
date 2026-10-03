@@ -8,7 +8,7 @@ paths:
   reports: agent/reports
 
 training:
-  game: Airstriker-Genesis-v0
+  game: {{ cookiecutter.game }}
   savestates: [Level1]
   rotation_minutes: 120
   fingerprint: null

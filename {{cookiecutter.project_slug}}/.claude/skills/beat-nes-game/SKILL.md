@@ -5,7 +5,8 @@ description: Turn this generated retro-speedlab project into a game package (aut
 
 # Beat an NES game with Laya
 
-This project was generated from the retro-speedlab template and still contains its Airstriker example. It
+This project was generated from the retro-speedlab template as a skeleton that knows nothing about the game
+yet: one `Play` state, the plain NES buttons, an empty `GameRam` and no rewards. It
 depends on `retro-speedlab-core` (the engine, `datenwissenschaften` on PyPI,
 https://github.com/datenwissenschaften/retro-speedlab-core) and contains only game knowledge: RAM map,
 detectors, actions, states, hints, rewards. The engine owns learning, curriculum, UI and deployment. Work in
@@ -37,18 +38,18 @@ Run every command from the project root. Placeholders used below:
    Read `scenario.json`: its done condition (often `lives` negative) ends every episode, whatever the states say.
    To develop against a local engine checkout instead of the released package, replace the dependency with
    `[tool.poetry.dependencies] datenwissenschaften = { path = "<engine checkout>", develop = true }`.
-2. **Configure the game** in `config.yaml`: `training.game: <Game>-Nes-v0`, `training.savestate: <state>`,
+2. **Configure the game** in `config.yaml`: `training.game: <Game>-Nes-v0`, `training.savestates: [<state>]`,
    `ui.release: local`.
-3. **Replace the Airstriker example** with the game's files from the next sections: `src/ram/airstriker.py`
-   becomes `src/ram/<game>.py`, `src/game/actions.py` gets the NES buttons, `src/states/survive.py` becomes
-   the game's states, and the wrapper and its tests are renamed.
+3. **Grow the skeleton** with the game's files from the next sections: verified fields go into `GameRam` in
+   `src/ram/game.py`, `src/game/actions.py` refines the plain NES buttons, and `Play` in `src/states/play.py`
+   splits into the game's states, each with a test.
 4. **Create `NOTES.md`**, run `ruff check`, `ruff format`, `pytest`, and commit.
 
 Layout after the first iteration:
 
 ```
 app.py                  LayaTrainer(Wrapper, CONFIG_PATH).train()
-src/ram/<game>.py       GameRam(RamInfo) with ram(0x...) fields and describe()
+src/ram/game.py         GameRam(RamInfo) with ram(0x...) fields and describe()
 src/game/actions.py     ACTION_TABLE (actions, frames, buttons) and ACTION_DESCRIPTIONS
 src/game/vision.py      detectors built from assets/ templates and RAM positions
 src/game/heading.py     maps an offset to the action that moves toward it (when movement is projected)
