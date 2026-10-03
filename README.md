@@ -1,8 +1,10 @@
 # Retro Speedlab Cookiecutter
 
-A Cookiecutter template that scaffolds a reproducible Stable Retro
-reinforcement-learning project, built on the
-[Retro Speedlab training library](https://github.com/datenwissenschaften/retro-speedlab-core).
+A Cookiecutter template that scaffolds a game package for
+[Retro Speedlab](https://www.retrospeedlab.com): a Stable Retro project in which
+the Laya decision model learns to beat a retro game by itself, built on the
+[Retro Speedlab Core](https://github.com/datenwissenschaften/retro-speedlab-core)
+training engine.
 
 ![Retro Speedlab Cookiecutter demo](docs/retro-speedlab-cookiecutter.gif)
 
@@ -16,8 +18,9 @@ flowchart TD
     GEN --> C[RAM decoder]
     GEN --> D[Reward / state logic]
     GEN --> E[Training configuration]
-    GEN --> F[Retro Speedlab library]
+    GEN --> F[Retro Speedlab Core]
     GEN --> G[Tests / tooling]
+    GEN --> H[Daily lab run + Dokku deployment]
 ```
 
 The generated project ships:
@@ -28,9 +31,12 @@ The generated project ships:
 - typed RAM decoding and reward shaping
 - a reduced discrete action space
 - the Laya decision model, fine-tuned from rewards
-- local training telemetry and controls
+- local training telemetry, controls, and a stream view for OBS
 - a `tests/` suite covering actions, RAM decoding, and reward logic
 - Poetry, Ruff, and pre-commit configuration
+- a Dockerfile and Dokku scripts that train around the clock on a GPU server
+- a scheduled Claude Code lab run that grows the game package and writes lab
+  reports, guided by the bundled `beat-nes-game` skill
 
 ## Quick start
 
@@ -69,7 +75,7 @@ $ cookiecutter https://github.com/datenwissenschaften/retro-speedlab
   [1/11] project_name (Retro Speedlab):
   [2/11] project_slug (retro-speedlab):
   [3/11] version (0.0.1):
-  [4/11] description (Train retro game agents and evaluate them on the Speedlab platform.):
+  [4/11] description (Teach the Laya decision model to beat a retro game by itself.):
   [5/11] author_name (author_name):
   [6/11] author_email (author_email@example.com):
   [7/11] license (GPL-3.0-only):
@@ -86,10 +92,24 @@ equivalent to `cookiecutter ... --no-input`.
 
 ```text
 your-project/
+├── .claude/
+│   ├── settings.json
+│   └── skills/beat-nes-game/
+├── agent/
+│   ├── daily.sh
+│   ├── PROMPT.md
+│   └── reports/
+├── dokku/
+│   ├── deploy.sh
+│   ├── settings.sh
+│   └── setup.sh
 ├── app.py
 ├── config.yaml
+├── Dockerfile
 ├── pyproject.toml
 ├── roms/
+│   └── .gitkeep
+├── savestates/
 │   └── .gitkeep
 ├── src/
 │   ├── game/
@@ -117,7 +137,7 @@ flowchart LR
     TRAINER --> LAYA[Laya decision model]
     TRAINER --> UI[Dashboard + stream view]
     TRAINER --> DB[(JSON database)]
-    LIB[Retro Speedlab library] -.base classes.-> WRAP
+    LIB[Retro Speedlab Core] -.base classes.-> WRAP
     LIB -.-> STATE
     LIB -.-> TRAINER
 ```
@@ -140,7 +160,8 @@ Stable Retro for testing, so the example trains without a commercial ROM.
 
 ## Adapting to another game
 
-1. Change `training.game` and `training.savestate` in `config.yaml`.
+1. Change `training.game` and `training.savestates` (the levels in training
+   order) in `config.yaml`.
 2. Replace the controller mapping and action descriptions in
    `src/game/actions.py`.
 3. Define verified RAM offsets in `src/ram/`.
@@ -155,22 +176,24 @@ credentials.
 
 ## Configuration
 
-`config.yaml` is the single source for game selection, savestate, paths,
-training budget, uploads, logging, and the local UI:
+`config.yaml` is the single source for game selection, levels, paths, uploads,
+logging, the local UI, and the server deployment:
 
 | Section | Purpose |
 | --- | --- |
-| `paths` | ROM, model, recording, cache directories, and the JSON training database, relative to the project |
-| `training` | Game ID, savestate, and fingerprint |
+| `paths` | ROM, savestate, model, recording, cache, and lab report directories, and the JSON training database, relative to the project |
+| `training` | Game ID, levels in training order, speedrun turn length, and fingerprint |
 | `laya` | The Laya checkpoint (Hugging Face Hub ID or local directory) |
 | `log_level` | Standard Python logging level |
-| `upload` | Optional Speedlab competition API endpoint and key (`null` for local-only training) |
-| `ui` | Local telemetry dashboard and stream view host/port |
+| `upload` | Retro Speedlab API endpoint and key for beaten levels and lab reports (`null` for local-only training) |
+| `ui` | Local telemetry dashboard and stream view host, port, and persona |
+| `twitch` | Short lab reports on the stream, written by free OpenRouter models |
+| `dokku`, `agent` | GPU server deployment and the schedule of the daily lab run |
 
 All paths are relative to the project directory, so a generated project can
 be moved without editing machine-specific values. Do not commit a real
-`upload.api_key`; keep it `null` unless you intend to submit competition
-runs.
+`upload.api_key`; keep it `null` unless you intend to upload beaten levels and
+lab reports.
 
 ## Reproducibility
 
@@ -230,7 +253,7 @@ smoke-tests `app.py` by importing it (see [Reproducibility](#reproducibility)).
 - If you adapt the example to another game, you are responsible for only
   using ROMs you have the legal right to use, and for not committing them.
 
-## Relationship to Retro Speedlab Library
+## Relationship to Retro Speedlab
 
 **`retro-speedlab`** (this repository) is a project generator: it scaffolds
 a runnable game wrapper, action space, RAM decoder, reward logic, training
@@ -239,7 +262,11 @@ configuration, tests, and tooling for a specific game.
 **[`retro-speedlab-core`](https://github.com/datenwissenschaften/retro-speedlab-core)**
 (published as the `datenwissenschaften` package) is the reusable training
 engine: the Laya decision model, its reward-driven fine-tuning, the
-state-machine environment, resumable checkpoints, and live telemetry.
+state-machine environment, resumable checkpoints, uploads, and live telemetry.
+
+**[retrospeedlab.com](https://www.retrospeedlab.com)** is the lab's website:
+the live stream, the levels Laya has beaten, and the short lab reports
+uploaded by generated projects.
 
 A generated project depends on the library; it does not reimplement it.
 Game-specific code (actions, RAM offsets, reward shaping) lives in the

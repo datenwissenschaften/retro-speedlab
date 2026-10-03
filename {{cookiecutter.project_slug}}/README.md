@@ -14,10 +14,9 @@ Before starting training:
 
 1. Use a GPU with at least 6 GB of memory. The first start downloads the Laya
    checkpoint configured under `laya.checkpoint`.
-2. To submit runs and compete, create an account at
-   <https://speedlab.datenwissenschaften.com/> and obtain an API key. Set that
-   key as `upload.api_key` in `config.yaml`. You can leave the value set to
-   `null` for local-only training.
+2. Leave `upload.api_key` set to `null` for local-only training. With a key,
+   every level Laya beats from its first frame and every short lab report is
+   uploaded to the Retro Speedlab API configured under `upload.url`.
 
 Then install the project and start training:
 
@@ -40,13 +39,13 @@ obtained game.
 
 ## Configuration
 
-Edit `config.yaml` to control the game, savestate, Laya checkpoint, output
-directories, the JSON training database, upload credentials, and local UI. All paths are relative
-to the project directory.
+Edit `config.yaml` to control the game, the levels to train in order, the Laya
+checkpoint, output directories, the JSON training database, lab reports, upload
+credentials, and the local UI. All paths are relative to the project directory.
 
 Do not commit API keys. Keep `upload.api_key` set to `null` unless you intend to
-upload competition runs, and keep credential-bearing configuration out of
-version control.
+upload beaten levels and lab reports, and keep credential-bearing configuration
+out of version control.
 
 ## Example design
 
@@ -62,16 +61,16 @@ version control.
 
 To adapt the generated project to another game, replace the action mapping,
 RAM offsets, and state/reward logic, then update `training.game` and
-`training.savestate`.
+`training.savestates`.
 
 ## Self-learning on a server
 
 The project is meant to learn the game by itself: training runs around the clock
-on a GPU server, and once a day Claude Code runs there unattended
-(`agent/daily.sh`, prompt in `agent/PROMPT.md`). It measures the progress, makes
-one verified change to the game package (RAM map, states, detectors, hints,
+on a GPU server, and four times a day Claude Code runs there unattended
+(`agent/daily.sh`, prompt in `agent/PROMPT.md`, schedule in `agent.schedule`). It
+measures the progress, makes at least one verified change to the game package (RAM map, states, detectors, hints,
 rewards, savestates for newly reached levels), tests it, commits, deploys and
-writes a report into `agent/reports/`. It follows the skill in
+writes a lab report into `agent/reports/`. It follows the skill in
 `.claude/skills/beat-nes-game/SKILL.md`; the permissions in
 `.claude/settings.json` forbid `sudo`, pushing and editing the training data.
 

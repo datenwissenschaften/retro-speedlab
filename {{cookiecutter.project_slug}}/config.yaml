@@ -1,13 +1,16 @@
 paths:
   roms: roms
+  savestates: savestates
   models: working/models
   recordings: working/recordings
   cache: working/cache
   database: working/database.json
+  reports: agent/reports
 
 training:
   game: Airstriker-Genesis-v0
-  savestate: Level1
+  savestates: [Level1]
+  rotation_minutes: 120
   fingerprint: null
 
 laya:
@@ -16,7 +19,7 @@ laya:
 log_level: INFO
 
 upload:
-  url: https://speedlab.datenwissenschaften.com/api
+  url: https://api.retrospeedlab.com
   api_key: null
 
 ui:
@@ -25,9 +28,12 @@ ui:
   port: 18080
   max_episodes: 1000
   release: local
+  persona: Laya
 
 twitch:
   enabled: false
+  summary_models:
+    - google/gemma-4-31b-it:free
 
 dokku:
   host: dokku
