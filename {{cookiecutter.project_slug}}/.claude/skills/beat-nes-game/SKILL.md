@@ -398,7 +398,10 @@ scripts.
    `NOTES.md` has no walkthrough for the level, research it first (section 2); afterwards the next blocker is
    the first **gate** of the walkthrough that is not yet measured, marked, reached by the scripted player and
    rewarded as its own phase. Skip optional steps until every gate of the level is done, unless one blocks a
-   gate.
+   gate. Before working on what leads up to a gate, measure whether its condition is already met: in the live
+   frames and the scripted player, check the value the gate needs (a weight, an item count, a key flag). When
+   attempts already reach it, the gate itself (the scale, the door, the boss) is the next work, not its
+   preparation.
 3. **Reproduce before fixing.** Copy savestates and landmarks from the training data and reproduce the
    blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
    mechanics or coordinates; cut templates from real frames and verify them.
@@ -406,17 +409,19 @@ scripts.
    game), with a test that pins it. `ruff check`, `ruff format`, `pytest`, commit with the evidence in the
    message, deploy, and watch the live training for 10 minutes: no errors, non-zero rewards, action
    probabilities no longer uniform. When an investigation is inconclusive, try another way and narrow the
-   change to what is verified instead of stopping. Use the whole time budget: after a verified deploy, take
-   the same gate one step further (measure, mark, reach, phase) and ship again, until the time to stop
-   exploring.
+   change to what is verified instead of stopping.
+   **Never end the run before the time to stop exploring.** Check it with `date -u` against the run's start
+   and `agent.hours`. One shipped change is not the end of a run: after each verified deploy, take the same
+   gate one step further (measure, mark, reach, phase) and ship again; when the gate is done, start the next
+   gate. Only the final report and summary come after the cutoff.
 5. **Grow the game.** When a level is beaten and the next level has no savestate yet, create it: play from the
    level's winning checkpoint through the level end, find the RAM that marks the new level, save the emulator
    state at its start as `savestates/LevelN.state` (gzip, like stable-retro states), verify it loads, and
    append it to `training.savestates` in both configs. Research the new level's walkthrough. New levels may
    need new states, enemies, power-ups or hazards: catalogue them (section 2) before training on them.
 6. **Report.** Write `agent/reports/YYYY-MM-DDTHHMM.md` (the run's UTC start): the measurements, the decision
-   and its evidence, the change and its commit, the metric for the next run, and open questions. Update
-   `NOTES.md` with verified facts.
+   and its evidence, every change with its commit and its live check, the metric for the next run, and open
+   questions. Update `NOTES.md` with verified facts.
 
 Rules for the unattended run: ship at least one verified change that improves what the model learns from;
 never reset models, delete training data or edit files of the running training; never bump the engine
