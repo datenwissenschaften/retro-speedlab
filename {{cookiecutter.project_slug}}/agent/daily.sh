@@ -8,6 +8,9 @@ restore_workspace_owner() {
     chown -R "$(stat -c %u:%g "${WORKSPACE_DIR}")" "${WORKSPACE_DIR}"
 }
 trap restore_workspace_owner EXIT
+
+exec {lock}>"${WORKSPACE_DIR}/.agent.lock"
+flock --nonblock "${lock}" || { echo "Another lab run is active" >&2; exit 0; }
 source "${PROJECT_DIR}/dokku/settings.sh"
 readonly DOKKU_HOST="$(setting dokku.host)"
 readonly HOST_ADDRESS="$(setting dokku.host_address)"
