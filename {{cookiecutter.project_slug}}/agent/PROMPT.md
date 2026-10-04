@@ -61,7 +61,23 @@ level, reach the end first and leave the steps on the way for later:
    and commit it with a line in `NOTES.md`, so the next run starts where this one got instead of searching
    again. Savestates in `/tmp` are lost when the container ends.
 5. **Teach it.** Mark the exit's objects, add the win and the exit's condition to the states and rewards, and
-   ship it. The final phase then starts from the curriculum checkpoint where it begins (skill section 3).
+   ship it. Then break the level into parts (next section).
+
+## Break each level into parts
+
+A level is learned in parts, not as one task. As soon as the route through a level is known (from the
+walkthrough, a movie or the emulator), split it into distinct, manageable states, one per objective in the order
+the game enforces, for example: eat until heavy enough, then reach the scale, then leave through the door.
+
+- Each state has one goal, its own question and reward, and a verified transition condition to the next state
+  (skill section 3). Backward transitions cover a lost precondition (the weight drops, so back to eating).
+- The engine saves a curriculum checkpoint only when an episode moves from one state to the next, and once a
+  state is mastered it starts later episodes from that checkpoint. A level kept as one state never gets
+  checkpoints: the dashboard shows a single state and Laya replays the start of the level forever.
+- Keep each part small enough that Laya can finish it within its frame budget. Split a part again when its
+  attempts keep timing out or failing at the same place.
+- This comes before more markers, facts or rewards for a level whose route is known. Pin every transition with a
+  test on a real savestate, and check after the deploy that the dashboard lists the new states.
 
 Only then work the walkthrough's other gates from the start of the level toward the end, each in the same
 order: measure it, mark it (boxes and `nearest_*` facts in `describe()`, proven on a contact sheet and pinned
