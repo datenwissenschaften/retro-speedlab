@@ -74,15 +74,21 @@ before the win flag set.
 ### Research how each level is beaten
 
 Before measuring anything, find out from published sources what a player has to do to beat the level being
-trained. Use `WebSearch` and `WebFetch`:
+trained, with `WebSearch` and `WebFetch`. Use every kind of source, ranked as in `agent/PROMPT.md` ("Sources to learn the game from"): demonstrations
+recorded in `stable_retro` first, then compatible tool-assisted movies, then speedrun and longplay videos, then
+text:
 
+- **Demonstrations** (`agent/demonstrations/*.bk2`): human play and the lab's own successful runs, replayed
+  exactly from power-on.
+- **Tool-assisted runs** (TASVideos publications, obsoleted movies and submissions): the route and, when the
+  movie syncs in `stable_retro`, emulator states along it.
+- **Speedrun and longplay videos** (speedrun.com, YouTube, Twitch archives, World of Longplays): the route, the
+  places of each objective and the tricks that skip parts; the inputs where an input display shows them.
 - **Walkthroughs, guides and the original manual** (GameFAQs, StrategyWiki, fan sites, manual scans): the
   level's goal, the order of its gates (what opens the exit), the items, enemies and hazards, and how the level
   ends.
 - **RAM maps** (Data Crystal, TASVideos game resources): candidate addresses for lives, position, level,
   timers and progress flags.
-- **Speedruns and tool-assisted runs** (speedrun.com, TASVideos submissions and their videos): the fastest
-  route and the tricks that skip parts of it, for the speedrun phase later.
 
 Write the findings into `NOTES.md` under `## Walkthrough`, one subsection per level: numbered steps from the
 level start to the level end, each with its source URL, and the candidate RAM addresses with theirs. Mark every
@@ -104,8 +110,8 @@ Published knowledge is a hypothesis, not a fact:
 - **Teach the behaviour, not the moves.** The verified steps become the gates of the state machine (section
   3), the targets to mark (markers) and the progress rewards (section 4); the engine's curriculum then starts
   episodes where each mastered phase ends, so Laya is told about and rewarded for each step and learns to reproduce it. Hints stay generic rules (section 5):
-  a tool-assisted movie's route (objectives, waypoints, targets) may go into the states, markers and rewards
-  and its replay may provide curriculum seeds, but never copy button sequences into the game package.
+  every source's route (objectives, waypoints, targets) may go into the states, markers and rewards and an
+  exact replay may provide curriculum seeds, but never copy button sequences into the game package.
 
 ### RAM discovery
 

@@ -106,22 +106,40 @@ by a test), reach it with a scripted player, and phase it. A hazard or enemy com
 the way to the exit or ends most attempts. After the last gate come **new levels**, as the next states of the same run (skill section 11, step 5),
 and **speedrun** (section 8).
 
+## Sources to learn the game from, best first
+
+Use every source below, in this order. A higher source wins when two disagree, and the emulator wins over all
+of them. Each one gives Laya the route (the order of objectives, waypoints and targets for the states, markers
+and rewards) and, when it replays exactly, curriculum seeds. Laya still presses every button itself: never put
+a source's inputs into the game package. Note in `NOTES.md` what each source gave and how far it got.
+
+1. **Demonstrations recorded in `stable_retro`.** `.bk2` movies from power-on under `agent/demonstrations/`:
+   human play recorded in `stable_retro`, and every successful scripted or search run of the lab. They replay
+   exactly. Record every scripted player, beam search or explorer that reaches a new part with
+   `stable_retro.make(..., record=...)` and commit its `.bk2` there, named after the part it reaches, so the
+   next run can replay it instead of searching again.
+2. **Compatible tool-assisted movies.** A TASVideos publication (linked in `NOTES.md`) downloads its movie from
+   `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
+   Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`) with
+   `use_restricted_actions=stable_retro.Actions.ALL`: the default filter drops START and the movie never leaves
+   the title screen. Use a movie only when it is compatible: its ROM checksum matches the game's ROM in
+   `stable_retro`, and its replay reaches the part you need (check the frames and RAM at the point the movie
+   shows). Save the emulator state every few hundred frames and at every level change; states from before the
+   drift are as good as the movie's. When a movie is not compatible, try the next one on the game's TASVideos
+   page (`https://tasvideos.org/Games/<id>`), including obsoleted ones.
+3. **Speedrun and longplay videos.** Real-time runs (speedrun.com, YouTube, Twitch archives) and longplays
+   (World of Longplays). Download them with `yt-dlp` and cut frames with `ffmpeg`. Read the inputs where the
+   runner shows an input display; otherwise take the route: the order of objectives, the places they happen
+   (match video frames to emulator frames) and the tricks that skip parts. Verify every step in the emulator
+   before it becomes a state, marker or reward.
+4. **Walkthroughs, manuals and RAM maps.** GameFAQs, StrategyWiki, manual scans, Data Crystal and TASVideos
+   game resources: the goal of each level, the order of its gates, and candidate RAM addresses
+   (skill section "Research how each level is beaten").
+
+When no source reaches a part, use the ways below.
+
 ## Ways to reach a place you have not seen
 
-- **Tool-assisted movies.** A TASVideos publication (linked in `NOTES.md`) downloads its movie from
-  `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
-  Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`) with
-  `use_restricted_actions=stable_retro.Actions.ALL`: the default filter drops START and the movie never leaves the
-  title screen. Save the emulator state every few hundred frames and at every level change, and look at the frames to see
-  where it drifts (the player stops, dies or walks into walls). States from before the drift are as good as the
-  movie's. Follow the movie's route: save a curriculum seed from the replay where each part begins, and take
-  its order of objectives, waypoints and targets into the states, markers and rewards. Laya still presses
-  every button itself: never put the movie's inputs into the game package.
-  Use a movie only when it is compatible: its ROM checksum matches the game's ROM in `stable_retro`, and its
-  replay from power-on reaches the part you need (check the frames and RAM at the point the movie shows).
-  When it is not, try the next movie on the game's TASVideos page (`https://tasvideos.org/Games/<id>`),
-  including obsoleted ones. When none is compatible, stop replaying movies and use the ways below. Note in
-  `NOTES.md` which movies are compatible and how far each syncs.
 - **Explorer from the furthest point.** Continue `explore.py` from the furthest state saved from power-on with the
   world position in the cell, again and again, and commit each new furthest state.
 - **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try
