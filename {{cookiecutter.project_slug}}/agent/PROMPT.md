@@ -113,6 +113,10 @@ and **speedrun** (section 8).
   movie's. Follow the movie's route: save a curriculum seed from the replay where each part begins, and take
   its order of objectives, waypoints and targets into the states, markers and rewards. Laya still presses
   every button itself: never put the movie's inputs into the game package.
+  When a movie drifts before the part you need or skips it (a warp, a route around a gate), try the next one:
+  every publication on the game's TASVideos page (`https://tasvideos.org/Games/<id>`), its obsoleted
+  movies and the rejected submissions, other categories (warpless, two players with
+  `players=2`), and the ROM revision each one names. Note in `NOTES.md` which movies sync how far.
 - **Explorer from the furthest point.** Continue `explore.py` from the furthest state saved from power-on with the
   world position in the cell, again and again, and commit each new furthest state.
 - **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try
