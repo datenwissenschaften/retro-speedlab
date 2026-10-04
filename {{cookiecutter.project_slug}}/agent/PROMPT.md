@@ -91,8 +91,12 @@ the door, then the next level's parts.
   state is mastered it starts later episodes from that checkpoint. A level kept as one state never gets
   checkpoints: the dashboard shows a single state and Laya replays the start of the level forever.
 - Seed each part that Laya cannot reach yet (section "Like a real speedrun").
-- Keep each part small enough that Laya can finish it within its frame budget. Split a part again when its
-  attempts keep timing out or failing at the same place.
+- Keep each part small enough that Laya can finish it within one attempt (three real minutes per state).
+- **Split a stalled part.** When a state has trained for six hours (`summary.by_state.<State>.duration_seconds_total`
+  in `/api/snapshot` reaches 21600) and has fewer than half its win target
+  (`metadata.savestate_curriculum.<State>.wins` < `win_target / 2`), split it into two states at a verified
+  intermediate goal (for example a tail of 2 before a tail of 4), each with its own question, reward, transition
+  test and seed from power-on, and deploy. A part that stalls again is split again.
 - This comes before more markers, facts or rewards for a level whose route is known. Pin every transition with a
   test on a real state saved from power-on, and check after the deploy that the dashboard lists the new states.
 

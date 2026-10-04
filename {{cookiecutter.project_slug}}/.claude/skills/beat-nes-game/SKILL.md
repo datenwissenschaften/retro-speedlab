@@ -319,6 +319,8 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   A raw emulator state (`env.em.get_state()`) saved as `curriculum/<State>.state` (`paths.curriculum`) seeds a
   state's checkpoint until the engine saved its own: the lab plays from power-on to where a part begins and
   hands Laya that start, part by part toward a full game clear. The stream and the website show the curriculum.
+- An attempt ends after three real minutes in one state. A state below half its win target after six hours
+  of attempts is too big: split it in two (`agent/PROMPT.md`, "Split a stalled part").
 - Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
   when its phase begins. After 8 full-run wins every attempt is a speedrun with an extra cost of 0.005 per
   frame, so faster wins score higher.
