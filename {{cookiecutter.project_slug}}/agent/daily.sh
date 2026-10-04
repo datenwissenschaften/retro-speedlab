@@ -15,7 +15,7 @@ source "${PROJECT_DIR}/dokku/settings.sh"
 readonly DOKKU_HOST="$(setting dokku.host)"
 readonly HOST_ADDRESS="$(setting dokku.host_address)"
 readonly DEADLINE="$(( $(date +%s) + $(setting agent.hours) * 3600 ))"
-readonly MIN_RESUME_SECONDS=300
+readonly WRAP_UP_SECONDS=1200
 readonly MODEL="$(setting agent.model)"
 readonly AGENT_KEY="/workspace/.ssh/agent_key"
 
@@ -43,7 +43,7 @@ seconds_left() {
 }
 
 timeout "$(seconds_left)" claude -p "$(cat agent/PROMPT.md)" "${claude_options[@]}" >>"${log}" 2>&1 || true
-while (( $(seconds_left) > MIN_RESUME_SECONDS )); do
+while (( $(seconds_left) > WRAP_UP_SECONDS )); do
     timeout "$(seconds_left)" claude -p --continue "$(( $(seconds_left) / 60 )) minutes of this run are left. \
 Keep working toward the level end as agent/PROMPT.md says, from where you stopped. \
 Update the same report and commit before you stop." "${claude_options[@]}" >>"${log}" 2>&1 || break
