@@ -232,3 +232,5 @@ explore/
 
 # Retro Speedlab daily agent logs
 agent/logs/
+
+HINT.summary.json
