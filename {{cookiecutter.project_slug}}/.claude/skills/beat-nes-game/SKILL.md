@@ -396,10 +396,13 @@ scripts.
 2. **Decide the change.** Pick the level being trained (the first unbeaten one) and its biggest blocker with
    the table in section 9. A constant reward is always the first blocker: without a learning signal every
    action stays equally likely. Revert the previous run's change first if its metric got worse. When
-   `NOTES.md` has no walkthrough for the level, research it first (section 2); afterwards the next blocker is
-   the first **gate** of the walkthrough that is not yet measured, marked, reached by the scripted player and
-   rewarded as its own phase. Skip optional steps until every gate of the level is done, unless one blocks a
-   gate. Before working on what leads up to a gate, measure whether its condition is already met: in the live
+   `NOTES.md` has no walkthrough for the level, research it first (section 2). Until the level end has been
+   reached in the emulator and its win flag verified, the next blocker is the level end itself: get there by
+   any means (a tool-assisted movie replayed from power-on, the explorer continued from the furthest savestate,
+   a scripted player, RAM pokes for the exit's preconditions), commit a savestate before each part of the exit
+   under `agent/savestates/`, and teach the exit first. Afterwards the next blocker is the first **gate** of the
+   walkthrough that is not yet measured, marked, reached by the scripted player and rewarded as its own phase.
+   Skip optional steps until every gate of the level is done, unless one blocks a gate. Before working on what leads up to a gate, measure whether its condition is already met: in the live
    frames and the scripted player, check the value the gate needs (a weight, an item count, a key flag). When
    attempts already reach it, the gate itself (the scale, the door, the boss) is the next work, not its
    preparation.

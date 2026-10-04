@@ -6,14 +6,15 @@ investigate and fix) and `../retro-speedlab-core/AGENTS.md` for code style.
 
 ## Goal
 
-The model must learn. Each run ships at least one verified change that gives the model a better signal to
-learn from, and confirms on the live training that it works. Ending without a change is only acceptable when
-tests fail or the deploy breaks and you reverted it.
+The model must learn to win the level. Laya can only be taught a win that has been seen: until the level
+end has been reached in the emulator, that is the work of every run. Each run moves the furthest verified
+point toward the level end, or ships a verified change that gives the model a better signal to learn from,
+and confirms on the live training that a shipped change works.
 
 ## Order of work
 
-The goal of every run is that Laya reproduces the next step of the walkthrough for the level being trained
-(the first unbeaten one). When `NOTES.md` has no walkthrough for that level yet, research it first in this run.
+The level being trained is the first unbeaten one. When `NOTES.md` has no walkthrough for it yet, research
+it first in this run.
 
 First the basics, each done once per game:
 
@@ -25,35 +26,58 @@ First the basics, each done once per game:
    with a test.
 3. **Player marker.** A box on the player from the verified position (skill section 2, "Markers").
 
-Then every run works on **the next gate**: the first walkthrough step that Laya is not yet told about and
-rewarded for. Take it as far as the run gets, in this order:
+Then **the win, worked backward from the level end**. As long as `NOTES.md` has no verified win flag for the
+level, reach the end first and leave the steps on the way for later:
 
-1. **Measure it.** Find the gate's objects and RAM (object kinds, flags, counters, thresholds) and verify them.
-2. **Mark it.** Boxes and `nearest_*` facts in `describe()` for what the step collects, operates or reaches,
-   proven on a contact sheet and pinned by a test.
-3. **Reach it.** A scripted player built on the verified RAM plays from the level start to the gate and
-   passes it. Save local savestates on the way to develop and test the next phase against.
-4. **Phase it.** Split the level into states at the gate (skill section 3), each with its own question,
-   reward and success condition. Once the phase before the gate is mastered, the engine starts every episode
-   from the checkpoint where the gate's phase begins, so Laya practises the gate itself instead of replaying
-   the level up to it.
+1. **Get there.** Reach the exit and everything that opens it (scale, bell, door, boss) in the emulator by
+   any means: replay a published tool-assisted movie, steer a scripted player along explorer milestones, or
+   poke the RAM a precondition needs (a weight, a key, a flag) to test the exit in isolation. Look at the
+   frames on the way.
+2. **Measure the end.** Diff the RAM around every event at the exit: opening it, entering it, the level
+   changing. Verify the win flag and the exit's condition (for example the weight the scale needs) in at
+   least two runs.
+3. **Keep the way.** Save a savestate before each part of the exit (`agent/savestates/<level>_<place>.state`)
+   and commit it with a line in `NOTES.md`, so the next run starts where this one got instead of searching
+   again. Savestates in `/tmp` are lost when the container ends.
+4. **Teach it.** Mark the exit's objects, add the win and the exit's condition to the states and rewards, and
+   ship it. The final phase then starts from the curriculum checkpoint where it begins (skill section 3).
 
-A hazard or enemy comes first only when it stops the scripted player from reaching the gate, or ends most
-attempts before the phase before the gate can be mastered. After the last gate come **new levels** (skill
-section 11, step 5) and **speedrun** (section 8).
+Only then work the walkthrough's other gates from the start of the level toward the end, each in the same
+order: measure it, mark it (boxes and `nearest_*` facts in `describe()`, proven on a contact sheet and pinned
+by a test), reach it with a scripted player, and phase it. A hazard or enemy comes first only when it blocks
+the way to the exit or ends most attempts. After the last gate come **new levels** (skill section 11, step 5)
+and **speedrun** (section 8).
+
+## Ways to reach a place you have not seen
+
+- **Tool-assisted movies.** A TASVideos publication (linked in `NOTES.md`) downloads its movie from
+  `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
+  Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`), save a savestate every few
+  hundred frames and at every level change, and check that it stays in sync (score, lives and level match the
+  published run). A movie is only for measuring: never copy its inputs or route into the game package.
+- **Explorer from the furthest point.** Continue `explore.py` from the furthest committed savestate with the
+  world position in the cell, again and again, and commit each new furthest savestate.
+- **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try
+  another branch when it dies.
+- **RAM pokes.** Set a precondition directly to see what the next step does. Poking the position often leaves
+  the camera behind; poke only values the game reads, and confirm on the frames.
 
 ## How to work
 
-- Use the whole time budget. When an attempt is inconclusive, try another way: a longer or scripted discovery
-  run, another savestate, an explicit sprite colour, looking at the saved screenshots, diffing RAM around one
-  event. Narrow the change to what you verified instead of stopping because a part is unclear.
+- Use the whole time budget. The run continues after you stop until the time is up, so a stop only costs a
+  restart. When an attempt is inconclusive, try another way from the list above. Narrow the change to what you
+  verified instead of stopping because a part is unclear.
+- Start jobs longer than a minute (explorer, movie replay, scripted players) with the Bash tool's
+  `run_in_background`, never with `nohup ... &`: the shell kills those when the command returns. A job counts as
+  finished only when it wrote its result (the explorer's `summary.json`); report the run time you measured.
 - A variable counts as verified when it changes exactly at its event in at least two independent runs. Keep
   the evidence (frames, RAM values) in the commit message or the report.
 - Nothing about the game comes from memory or from other games. Find out online how the level is beaten
   (skill section 2, "Research how each level is beaten"), cite the sources in `NOTES.md`, and build only on
-  what you then measured in the emulator.
-- Check the time with `date -u`. Stop exploring when 20 minutes are left, then test, deploy, watch the
-  release for 10 minutes and report.
+  what you then measured in the emulator. When a page refuses the fetcher, try its copy on
+  `https://web.archive.org/web/2025/<url>` or another source before relying on search snippets.
+- Check the time with `date -u`. Stop exploring when 20 minutes are left, then test, deploy when you have a
+  change, watch the release for 10 minutes and report.
 
 ## After the deploy
 
