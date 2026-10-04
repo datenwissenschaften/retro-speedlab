@@ -7,9 +7,13 @@ investigate and fix) and `../retro-speedlab-core/AGENTS.md` for code style.
 ## Goal
 
 The model must learn to win the level. Laya can only be taught a win that has been seen: until the level
-end has been reached in the emulator, that is the work of every run. Each run moves the furthest verified
-point toward the level end, or ships a verified change that gives the model a better signal to learn from,
-and confirms on the live training that a shipped change works.
+end has been reached in the emulator, that is the main work of every run. Each run does two things:
+
+- It moves the furthest verified point toward the level end.
+- It ships at least one verified change that gives Laya a better signal to learn from (a reward, a marker, a
+  fact in `describe()`, a phase), deploys it and confirms on the live training that it works. Pick that change
+  by half time from what is already verified, so there is time to build, test and deploy it. Ending without a
+  deploy is only acceptable when tests fail or the deploy breaks and you reverted it.
 
 ## Order of work
 
@@ -82,8 +86,8 @@ and **speedrun** (section 8).
   (skill section 2, "Research how each level is beaten"), cite the sources in `NOTES.md`, and build only on
   what you then measured in the emulator. When a page refuses the fetcher, try its copy on
   `https://web.archive.org/web/2025/<url>` or another source before relying on search snippets.
-- Check the time with `date -u`. Stop exploring when 20 minutes are left, then test, deploy when you have a
-  change, watch the release for 10 minutes and report.
+- Check the time with `date -u`. Stop exploring when 20 minutes are left, then test, deploy, watch the
+  release for 10 minutes and report.
 
 ## After the deploy
 
