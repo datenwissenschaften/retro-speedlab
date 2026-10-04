@@ -30,16 +30,20 @@ Then **the win, worked backward from the level end**. As long as `NOTES.md` has 
 level, reach the end first and leave the steps on the way for later:
 
 1. **Get there.** Reach the exit and everything that opens it (scale, bell, door, boss) in the emulator by
-   any means: replay a published tool-assisted movie, steer a scripted player along explorer milestones, or
-   poke the RAM a precondition needs (a weight, a key, a flag) to test the exit in isolation. Look at the
-   frames on the way.
-2. **Measure the end.** Diff the RAM around every event at the exit: opening it, entering it, the level
+   any means: replay a published tool-assisted movie or steer a scripted player along explorer milestones.
+   Look at the frames on the way.
+2. **Test the gate directly.** At the gate, do not explore randomly. Set its precondition by poking the RAM (a
+   weight, a key, a flag) across its range and try every move and jump onto the target, watching a diff of the
+   whole RAM and the frames. When nothing reacts, the poked byte is not what the gate reads: diff the whole RAM
+   around the event that should satisfy it (eating, picking up the key) to find every byte that changes there,
+   and poke those.
+3. **Measure the end.** Diff the RAM around every event at the exit: opening it, entering it, the level
    changing. Verify the win flag and the exit's condition (for example the weight the scale needs) in at
    least two runs.
-3. **Keep the way.** Save a savestate before each part of the exit (`agent/savestates/<level>_<place>.state`)
+4. **Keep the way.** Save a savestate before each part of the exit (`agent/savestates/<level>_<place>.state`)
    and commit it with a line in `NOTES.md`, so the next run starts where this one got instead of searching
    again. Savestates in `/tmp` are lost when the container ends.
-4. **Teach it.** Mark the exit's objects, add the win and the exit's condition to the states and rewards, and
+5. **Teach it.** Mark the exit's objects, add the win and the exit's condition to the states and rewards, and
    ship it. The final phase then starts from the curriculum checkpoint where it begins (skill section 3).
 
 Only then work the walkthrough's other gates from the start of the level toward the end, each in the same
