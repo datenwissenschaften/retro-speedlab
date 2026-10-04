@@ -52,9 +52,11 @@ and **speedrun** (section 8).
 
 - **Tool-assisted movies.** A TASVideos publication (linked in `NOTES.md`) downloads its movie from
   `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
-  Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`), save a savestate every few
-  hundred frames and at every level change, and check that it stays in sync (score, lives and level match the
-  published run). A movie is only for measuring: never copy its inputs or route into the game package.
+  Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`) with
+  `use_restricted_actions=stable_retro.Actions.ALL`: the default filter drops START and the movie never leaves the
+  title screen. Save a savestate every few hundred frames and at every level change, and look at the frames to see
+  where it drifts (the player stops, dies or walks into walls). Savestates from before the drift are as good as the
+  movie's. A movie is only for measuring: never copy its inputs or route into the game package.
 - **Explorer from the furthest point.** Continue `explore.py` from the furthest committed savestate with the
   world position in the cell, again and again, and commit each new furthest savestate.
 - **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try
