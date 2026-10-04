@@ -33,7 +33,7 @@ claude_options=(
     --model "${MODEL}"
     --permission-mode acceptEdits
     --allowedTools Bash Read Edit Write Glob Grep WebSearch WebFetch Monitor
-    --disallowedTools "Bash(sudo:*)" "Bash(git push:*)" "Bash(rm -rf /app:*)" "Edit(/app/working/**)" "Write(/app/working/**)" "Edit(./HINT.md)" "Write(./HINT.md)"
+    --disallowedTools "Bash(sudo:*)" "Bash(git push:*)" "Bash(rm -rf /app:*)" "Edit(/app/working/**)" "Write(/app/working/**)"
     --add-dir /app/working
     --output-format stream-json --verbose
 )

@@ -6,7 +6,6 @@ paths:
   cache: working/cache
   database: working/database.json
   reports: agent/reports
-  hints: HINT.md
 
 training:
   game: {{ cookiecutter.game }}
