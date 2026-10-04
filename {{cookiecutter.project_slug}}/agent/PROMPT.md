@@ -4,6 +4,23 @@ one-off container of the training app, started by Dokku's scheduler, with `agent
 Follow `.claude/skills/beat-nes-game/SKILL.md` (section 11 for the scheduled loop, sections 2 to 9 for how to
 investigate and fix) and `../retro-speedlab-core/AGENTS.md` for code style.
 
+## Like a real speedrun
+
+Every attempt boots the game at power-on, like a real speedrun: the title screen, choosing one player, then the
+levels in order. There are no configured savestates.
+
+- The first state of every game is the menu (start the game, choose one player); every level is a later state of
+  the same run (section "Break each level into parts"). A level is beaten when its last state is passed.
+- Everything you know about the game comes from published sources (walkthroughs, manuals, articles, tool-assisted
+  movies) and from your own measurements in the emulator. Nobody hands you hints.
+- Every emulator state you use, for research or for Laya, is one you reached by playing from power-on in this
+  game (scripted inputs, a replayed movie or the explorer). Never use the bundled stable-retro states (for
+  example `Level1.state`) or state files from elsewhere.
+- **Curriculum seeds.** When Laya cannot yet reach a part, save the raw emulator state (`env.em.get_state()`)
+  where that part begins as `curriculum/<State>.state` and commit it. The engine uses it as that state's practice
+  start until it saved its own checkpoint, so Laya practises the parts in order toward a full game clear. The
+  website and the stream show the curriculum.
+
 ## Goal
 
 The model must learn to win the level. Laya can only be taught a win that has been seen: until the level
@@ -54,9 +71,10 @@ level, reach the end first and leave the steps on the way for later:
 3. **Measure the end.** Diff the RAM around every event at the exit: opening it, entering it, the level
    changing. Verify the win flag and the exit's condition (for example the weight the scale needs) in at
    least two runs.
-4. **Keep the way.** Save a savestate before each part of the exit (`agent/savestates/<level>_<place>.state`)
-   and commit it with a line in `NOTES.md`, so the next run starts where this one got instead of searching
-   again. Savestates in `/tmp` are lost when the container ends.
+4. **Keep the way.** Save the emulator state, reached from power-on, before each part of the exit and commit it
+   as a curriculum seed (`curriculum/<State>.state`) once the state exists, or under `agent/research/` until
+   then, with a line in `NOTES.md`, so the next run starts where this one got instead of searching again. Files
+   in `/tmp` are lost when the container ends.
 5. **Teach it.** Mark the exit's objects, add the win and the exit's condition to the states and rewards, and
    ship it. Then break the level into parts (next section).
 
@@ -64,22 +82,24 @@ level, reach the end first and leave the steps on the way for later:
 
 A level is learned in parts, not as one task. As soon as the route through a level is known (from the
 walkthrough, a movie or the emulator), split it into distinct, manageable states, one per objective in the order
-the game enforces, for example: eat until heavy enough, then reach the scale, then leave through the door.
+the game enforces, for example: the menu, then eat until heavy enough, then reach the scale, then leave through
+the door, then the next level's parts.
 
 - Each state has one goal, its own question and reward, and a verified transition condition to the next state
   (skill section 3). Backward transitions cover a lost precondition (the weight drops, so back to eating).
 - The engine saves a curriculum checkpoint only when an episode moves from one state to the next, and once a
   state is mastered it starts later episodes from that checkpoint. A level kept as one state never gets
   checkpoints: the dashboard shows a single state and Laya replays the start of the level forever.
+- Seed each part that Laya cannot reach yet (section "Like a real speedrun").
 - Keep each part small enough that Laya can finish it within its frame budget. Split a part again when its
   attempts keep timing out or failing at the same place.
 - This comes before more markers, facts or rewards for a level whose route is known. Pin every transition with a
-  test on a real savestate, and check after the deploy that the dashboard lists the new states.
+  test on a real state saved from power-on, and check after the deploy that the dashboard lists the new states.
 
 Only then work the walkthrough's other gates from the start of the level toward the end, each in the same
 order: measure it, mark it (boxes and `nearest_*` facts in `describe()`, proven on a contact sheet and pinned
 by a test), reach it with a scripted player, and phase it. A hazard or enemy comes first only when it blocks
-the way to the exit or ends most attempts. After the last gate come **new levels** (skill section 11, step 5)
+the way to the exit or ends most attempts. After the last gate come **new levels**, as the next states of the same run (skill section 11, step 5),
 and **speedrun** (section 8).
 
 ## Ways to reach a place you have not seen
@@ -88,11 +108,11 @@ and **speedrun** (section 8).
   `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
   Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`) with
   `use_restricted_actions=stable_retro.Actions.ALL`: the default filter drops START and the movie never leaves the
-  title screen. Save a savestate every few hundred frames and at every level change, and look at the frames to see
-  where it drifts (the player stops, dies or walks into walls). Savestates from before the drift are as good as the
+  title screen. Save the emulator state every few hundred frames and at every level change, and look at the frames to see
+  where it drifts (the player stops, dies or walks into walls). States from before the drift are as good as the
   movie's. A movie is only for measuring: never copy its inputs or route into the game package.
-- **Explorer from the furthest point.** Continue `explore.py` from the furthest committed savestate with the
-  world position in the cell, again and again, and commit each new furthest savestate.
+- **Explorer from the furthest point.** Continue `explore.py` from the furthest state saved from power-on with the
+  world position in the cell, again and again, and commit each new furthest state.
 - **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try
   another branch when it dies.
 - **RAM pokes.** Set a precondition directly to see what the next step does. Poking the position often leaves
@@ -132,7 +152,7 @@ All names and addresses are in the `training`, `paths`, `dokku` and `agent` sect
   `python -m stable_retro.import roms`. The discovery tools are in `.claude/skills/beat-nes-game/scripts/`
   (`ram_discover.py`, `ram_locate.py`, `explore.py`; skill section 2); run them with `python`.
 - Training data (read-only, copy to `/tmp` before use): `/app/working` with `database.json`,
-  `cache/automatic_savestates/<game>/<level>/` (curriculum checkpoints, `landmarks.json`) and `recordings/`.
+  `cache/curriculum/<game>/` (curriculum checkpoints, `landmarks.json`) and `recordings/`.
 - Dashboard API: `http://<dokku.host_address>/api/snapshot`, `/api/live/episode`,
   `/api/live/frames?generation=<g>&episode=<id>&start=<n>`.
 - Dokku: `ssh <dokku.host> logs <dokku.app> --num 500`, `ssh <dokku.host> config:get <dokku.app> RELEASE`.

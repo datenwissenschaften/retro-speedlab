@@ -17,8 +17,9 @@ engine turns it into a learning agent.
 - `src/game/wrapper.py`: the `StateMachineGymWrapper` that wires them together
 - `tests/test_play.py`: pins down that the skeleton knows nothing yet
 
-Everything else (RAM map, phases, detectors, hints, rewards and savestates for
-new levels) is built by the lab runs, following
+Every attempt boots the game at power-on, like a real speedrun. Everything else
+(RAM map, the menu and level phases, detectors, hints, rewards and curriculum
+seeds) is built by the lab runs, following
 `.claude/skills/beat-nes-game/SKILL.md`.
 
 ## Quick start

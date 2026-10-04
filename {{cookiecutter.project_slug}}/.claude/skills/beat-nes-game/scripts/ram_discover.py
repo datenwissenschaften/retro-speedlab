@@ -37,7 +37,7 @@ PERCENTILES = (50, 90)
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Discover the RAM values a Laya game package needs.")
     parser.add_argument("--game", required=True)
-    parser.add_argument("--state", required=True)
+    parser.add_argument("--start", type=Path, required=True, help="a state saved from power-on, or 'none' for power-on")
     parser.add_argument("--play-minutes", type=float, required=True, help="random play for the event log")
     parser.add_argument("--playfield-bottom", type=int, required=True, help="first HUD row, excluded from sprites")
     parser.add_argument("--seed", type=int, required=True)
@@ -46,9 +46,13 @@ def parse_arguments() -> argparse.Namespace:
 
 
 class Emulator:
-    def __init__(self, game: str, state: str, seed: int) -> None:
-        self.env = stable_retro.make(game, state=state, render_mode=None)
+    def __init__(self, game: str, start: Path, seed: int) -> None:
+        self.env = stable_retro.make(
+            game, state=stable_retro.State.NONE, render_mode=None, use_restricted_actions=stable_retro.Actions.ALL
+        )
         self.env.reset(seed=seed)
+        if str(start) != "none":
+            self.restore(start.read_bytes())
         self.buttons = list(self.env.buttons)
         self.game_path = Path(stable_retro.data.get_file_path(game, "data.json"))
 
@@ -295,7 +299,7 @@ def main() -> None:
     arguments = parse_arguments()
     (arguments.out / "events").mkdir(parents=True, exist_ok=True)
     rng = random.Random(arguments.seed)
-    emulator = Emulator(arguments.game, arguments.state, arguments.seed)
+    emulator = Emulator(arguments.game, arguments.start, arguments.seed)
     start = emulator.save()
     bases = collect_bases(emulator, rng)
     positions = position_candidates(input_response(emulator, bases))

@@ -22,7 +22,7 @@ Run every command from the project root. Placeholders used below:
 | Placeholder | Meaning |
 |---|---|
 | `<Game>-Nes-v0` | the stable-retro game id, for example `SuperMarioBros-Nes-v0` |
-| `<state>` | a start savestate of that game, for example `Level1-1` |
+| `<start>` | `none` for power-on, or a state file you saved yourself after playing from power-on |
 | `<game>` | a short module name for the game, for example `super_mario_bros` |
 
 ## 1. Turn the template into the game package
@@ -35,11 +35,11 @@ Run every command from the project root. Placeholders used below:
    ```
    That directory holds `data.json` (known RAM variables), `scenario.json` (done condition) and `*.state`
    (start states). 298 NES games are integrated; a missing game needs a stable-retro integration first.
-   Read `scenario.json`: its done condition (often `lives` negative) ends every episode, whatever the states say.
+   Read `scenario.json` for the RAM variables it names; the engine ignores its done condition.
    To develop against a local engine checkout instead of the released package, replace the dependency with
    `[tool.poetry.dependencies] datenwissenschaften = { path = "<engine checkout>", develop = true }`.
-2. **Configure the game** in `config.yaml`: `training.game: <Game>-Nes-v0`, `training.savestates: [<state>]`,
-   `ui.release: local`.
+2. **Configure the game** in `config.yaml`: `training.game: <Game>-Nes-v0`, `ui.release: local`.
+   There are no savestates to configure: every attempt boots the game at power-on (section 8).
 3. **Grow the skeleton** with the game's files from the next sections: verified fields go into `GameRam` in
    `src/ram/game.py`, `src/game/actions.py` refines the plain NES buttons, and `Play` in `src/states/play.py`
    splits into the game's states, each with a test.
@@ -99,7 +99,7 @@ Published knowledge is a hypothesis, not a fact:
 - **Verify each step in the emulator** before building on it (RAM discovery and gate tests below). When the
   emulator disagrees with a source, the emulator wins: note the conflict and correct the step.
 - **Reproduce the walkthrough.** A scripted player built on the verified RAM (position, targets, flags) plays
-  the steps from the start savestate to the level end, saving a savestate at each gate. When it cannot beat
+  the steps from power-on to the level end, saving the emulator state at each gate. When it cannot beat
   the level, Laya cannot learn to: find the step that fails and fix the understanding before training.
 - **Teach the behaviour, not the moves.** The verified steps become the gates of the state machine (section
   3), the targets to mark (markers) and the progress rewards (section 4); the engine's curriculum then starts
@@ -110,7 +110,7 @@ Published knowledge is a hypothesis, not a fact:
 
 - **Discover everything first** with `scripts/ram_discover.py`; it needs only the game id:
   ```bash
-  poetry run python .claude/skills/beat-nes-game/scripts/ram_discover.py --game <Game>-Nes-v0 --state <state> \
+  poetry run python .claude/skills/beat-nes-game/scripts/ram_discover.py --game <Game>-Nes-v0 --start <start> \
       --play-minutes 20 --playfield-bottom 224 --seed 0 --out discovery
   ```
   Set `--playfield-bottom` to the first HUD row when the HUD sits below the playfield. The resulting
@@ -133,10 +133,10 @@ Published knowledge is a hypothesis, not a fact:
 - **Write `src/ram/<game>.py`** from verified values only, with a `describe()` that returns what Laya needs
   (lives, timer, progress counters, flags), and pin each field with a test.
 - **Refine a sprite position** with `scripts/ram_locate.py` when the automatic color is shared by other
-  objects; it takes an explicit color and extra savestates:
+  objects; it takes an explicit color and states you saved from power-on:
   ```bash
-  PYTHONPATH=. poetry run python .claude/skills/beat-nes-game/scripts/ram_locate.py --game <Game>-Nes-v0 --state <state> \
-      --starts <extra.state> --actions src.game.actions:ACTION_TABLE --color <r,g,b> --min-area 70 \
+  PYTHONPATH=. poetry run python .claude/skills/beat-nes-game/scripts/ram_locate.py --game <Game>-Nes-v0 \
+      --starts <saved.state> --actions src.game.actions:ACTION_TABLE --color <r,g,b> --min-area 70 \
       --max-fill 0.9 --playfield-bottom <row> --decisions 1500 --seed 0 --out locate.json
   ```
   Prefer RAM positions over color blobs: signs, pickups and HUD icons often share the player's colors.
@@ -144,10 +144,10 @@ Published knowledge is a hypothesis, not a fact:
 ### Map the level and its gates
 
 - **Map the level** with `scripts/explore.py` (Go-Explore). It returns milestones (the first time each tracked
-  RAM value appears, with a savestate and action path each), death hotspots and maxima:
+  RAM value appears, with a saved state and action path each), death hotspots and maxima:
   ```bash
-  PYTHONPATH=. poetry run python .claude/skills/beat-nes-game/scripts/explore.py --game <Game>-Nes-v0 --state <state> \
-      --start none --actions src.game.actions:ACTION_TABLE --cell <room>,<x>/24,<y>/24,<counter>,<flag> \
+  PYTHONPATH=. poetry run python .claude/skills/beat-nes-game/scripts/explore.py --game <Game>-Nes-v0 \
+      --start <start> --actions src.game.actions:ACTION_TABLE --cell <room>,<x>/24,<y>/24,<counter>,<flag> \
       --priority 0,0,0,4,20 --lives <lives address> --won <win flag address> --minutes 20 --seed 0 --out explore/
   ```
   Put the discovered progress bytes (counters, flags) in `--cell` with a high `--priority`. Continue from a
@@ -156,7 +156,7 @@ Published knowledge is a hypothesis, not a fact:
 - **List every gate** of the level, starting from the walkthrough's gate steps: what must happen before the
   next part opens (eat to a weight, ring a bell, collect a key, defeat a boss), and what undoes it (a hit costs
   weight, a death resets a counter).
-- **Test mechanics directly**: restore savestates with `env.em.set_state(bytes); env.data.reset();
+- **Test mechanics directly**: restore states you saved from power-on with `env.em.set_state(bytes); env.data.reset();
   env.data.update_ram()` and poke RAM with `env.unwrapped.data.memory.assign(address, "|u1", value)`. Leave
   the player idle for a few thousand frames at each gate to separate time-based effects from damage.
 - **Time the win**: record every frame from entering the exit to the win flag. Flags often set many frames
@@ -191,8 +191,9 @@ appears instead of guessing a sprite.
 
 - **Replays of `.bk2` recordings can drift** from the live run (curriculum restores, reset timing). Never
   analyse training behaviour from `.bk2` replays; use the live per-frame status
-  (`/api/live/frames`) or runs started from savestates.
-- **`scenario.json` ends episodes** on its own condition; the state machine cannot keep an episode alive past it.
+  (`/api/live/frames`) or runs started from states you saved.
+- **`scenario.json`'s done condition is ignored** by the engine, because it misfires on the title screen
+  (lives read as uninitialized RAM there). The game's states decide game over with `_terminated()`.
 - **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
 
 ## 3. Develop the state machine yourself
@@ -261,7 +262,7 @@ first sees its target, removes loops, keeps the shortest route, and `waypoint()`
 Never hardcode coordinates, routes or seeds into the game package.
 
 **Prove the hints before training.** Write a scripted player that does exactly what the hints say (plus
-`jump` when an enemy is `ahead`) and run it through the whole level from the start savestate with the state
+`jump` when an enemy is `ahead`) and run it through the whole level from power-on with the state
 machine. If it cannot win, Laya cannot learn a win from those hints: find where it gets stuck, look at the
 frame, and fix the state, hint or detector first. Measure afterwards how often Laya follows each state's hint
 (section 9) to see what it learned beyond them. Run it in every level you train, several attempts in a row
@@ -274,7 +275,7 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 
 - **World coordinates first.** Combine screen and position bytes into one continuous location (section 2)
   and use it for everything spatial: routes, exploration, safety, danger spots on the stream.
-- **One map per level (savestate)**, stored next to the level's landmarks (the engine's
+- **One map per game**, stored next to the landmarks (the engine's
   `Landmarks.safety`, a `SafetyMap` in 16 px cells) so it survives restarts and deploys and is cleared by a
   model reset.
 - **Record what happens where**: every hit or lost life marks its cell as `danger`; every cell the player got
@@ -306,16 +307,20 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 
 ## 8. How Laya learns in the engine (verify before changing)
 
-- One checkpoint per state: `<paths.models>/<game>/<savestate>/<State>/laya.pt` (weights, 8-bit AdamW,
+- One checkpoint per state: `<paths.models>/<game>/<State>/laya.pt` (weights, 8-bit AdamW,
   trust region, trained decisions). The active state's model is swapped into the single GPU slot; the next
   state's checkpoint is prefetched into RAM and saves are written in the background.
-- Once every state is mastered, every episode is a full run from the start savestate, and each state's model
-  takes over when its phase begins.
-- Levels are trained in order: `training.savestates` lists them, and the first level without 8 full-run wins is
-  trained until it has them, then the next. Only when every level is beaten do the levels take turns every
-  `training.rotation_minutes` (2 hours) as speedruns, with an extra cost of 0.005 per frame so faster wins
-  score higher. The current level and turn survive restarts and deploys.
-- Each level keeps its own models, curriculum savestates, landmarks, routes, safety map, story and statistics.
+- Every attempt boots the game at power-on with every button, like a real speedrun: the title screen and the
+  choice of one player are the first state (a `Menu` state), and every level is a later state of the same
+  run. There are no configured savestates; never use the bundled stable-retro states (`Level1.state`).
+- The curriculum trains the states in order. A state's checkpoint is saved automatically when an attempt first
+  moves into it; once the states before it are mastered (8 wins each), attempts start from that checkpoint.
+  A raw emulator state (`env.em.get_state()`) saved as `curriculum/<State>.state` (`paths.curriculum`) seeds a
+  state's checkpoint until the engine saved its own: the lab plays from power-on to where a part begins and
+  hands Laya that start, part by part toward a full game clear. The stream and the website show the curriculum.
+- Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
+  when its phase begins. After 8 full-run wins every attempt is a speedrun with an extra cost of 0.005 per
+  frame, so faster wins score higher.
 - Options are shuffled by a stable hash of state and question. Without it Laya gives about 97% to the first
   listed option and every fresh model starts stuck on one action.
 - Group-relative policy gradient with importance weights for the exploration mixture (20% random actions,
@@ -333,7 +338,7 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 
 ## 9. Diagnose a run
 
-Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.savestate_curriculum`, `summary`
+Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.curricula`, `summary`
 with `full_run_episodes` and `full_run_wins`, `server.release`) and `/api/live/episode`,
 `/api/live/frames?generation=<g>&episode=<id>&start=<n>` (per-frame status with probabilities, action, state,
 observation and events, and JPEG frames to look at).
@@ -387,7 +392,7 @@ check progress, change the code and keep learning. The repositories are mounted 
 (`CLAUDE_CODE_OAUTH_TOKEN`). Every deploy and schedule value comes from `config.yaml`, nothing is set in
 scripts.
 
-1. **Measure.** Read the dashboard (`/api/snapshot`: per-level summary in `summary.by_savestate`,
+1. **Measure.** Read the dashboard (`/api/snapshot`: the run's summary in `summary.by_savestate`,
    `metadata.curricula`, `metadata.stories`, `metadata.run`), the live attempts (`/api/live/episode`,
    `/api/live/frames`), and per level the landmarks, routes and safety map in the training data. Compare with
    the last reports in `agent/reports/`. Record per level: attempts, full-run wins, the curriculum phase that
@@ -398,15 +403,15 @@ scripts.
    action stays equally likely. Revert the previous run's change first if its metric got worse. When
    `NOTES.md` has no walkthrough for the level, research it first (section 2). Until the level end has been
    reached in the emulator and its win flag verified, the next blocker is the level end itself: get there by
-   any means (a tool-assisted movie replayed from power-on, the explorer continued from the furthest savestate,
-   a scripted player, RAM pokes for the exit's preconditions), commit a savestate before each part of the exit
-   under `agent/savestates/`, and teach the exit first. Afterwards the next blocker is the first **gate** of the
+   any means (a tool-assisted movie replayed from power-on, the explorer continued from the furthest saved state,
+   a scripted player, RAM pokes for the exit's preconditions), commit the state saved from power-on before each part
+   of the exit as a curriculum seed (section 8), and teach the exit first. Afterwards the next blocker is the first **gate** of the
    walkthrough that is not yet measured, marked, reached by the scripted player and rewarded as its own phase.
    Skip optional steps until every gate of the level is done, unless one blocks a gate. Before working on what leads up to a gate, measure whether its condition is already met: in the live
    frames and the scripted player, check the value the gate needs (a weight, an item count, a key flag). When
    attempts already reach it, the gate itself (the scale, the door, the boss) is the next work, not its
    preparation.
-3. **Reproduce before fixing.** Copy savestates and landmarks from the training data and reproduce the
+3. **Reproduce before fixing.** Copy curriculum checkpoints and landmarks from the training data and reproduce the
    blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
    mechanics or coordinates; cut templates from real frames and verify them.
 4. **Fix, test, ship.** The smallest change in the game package (or in the engine when it applies to every
@@ -418,11 +423,11 @@ scripts.
    and `agent.hours`. One shipped change is not the end of a run: after each verified deploy, take the same
    gate one step further (measure, mark, reach, phase) and ship again; when the gate is done, start the next
    gate. Only the final report and summary come after the cutoff.
-5. **Grow the game.** When a level is beaten and the next level has no savestate yet, create it: play from the
-   level's winning checkpoint through the level end, find the RAM that marks the new level, save the emulator
-   state at its start as `savestates/LevelN.state` (gzip, like stable-retro states), verify it loads, and
-   append it to `training.savestates` in both configs. Research the new level's walkthrough. New levels may
-   need new states, enemies, power-ups or hazards: catalogue them (section 2) before training on them.
+5. **Grow the game.** When a level is beaten, add the next level as the next states of the same run: play
+   from the level's winning checkpoint through the level end, find the RAM that marks the new level, and seed
+   the new level's first state with the emulator state at its start (section 8). Research the new level's
+   walkthrough. New levels may need new states, enemies, power-ups or hazards: catalogue them (section 2)
+   before training on them.
 6. **Report.** Write `agent/reports/YYYY-MM-DDTHHMM.md` (the run's UTC start): the measurements, the decision
    and its evidence, every change with its commit and its live check, the metric for the next run, and open
    questions. Update `NOTES.md` with verified facts.

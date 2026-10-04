@@ -19,8 +19,9 @@ BYTE_RANGE = 256
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Find the RAM bytes that hold a sprite's screen position.")
     parser.add_argument("--game", required=True)
-    parser.add_argument("--state", required=True)
-    parser.add_argument("--starts", type=Path, nargs="*", required=True, help="extra savestates to sample from")
+    parser.add_argument(
+        "--starts", type=Path, nargs="*", required=True, help="states saved from power-on to sample from"
+    )
     parser.add_argument("--actions", required=True, help="module:ATTRIBUTE of the (actions, frames, buttons) table")
     parser.add_argument("--color", required=True, help="exact sprite color as r,g,b")
     parser.add_argument("--min-area", type=int, required=True, help="blob area that is certainly the sprite")
@@ -50,7 +51,9 @@ def sprite_center(frame: np.ndarray, color: np.ndarray, arguments: argparse.Name
 def sample(arguments: argparse.Namespace) -> tuple[np.ndarray, np.ndarray]:
     module_name, attribute = arguments.actions.split(":")
     actions = getattr(importlib.import_module(module_name), attribute)
-    env = stable_retro.make(arguments.game, state=arguments.state, render_mode=None)
+    env = stable_retro.make(
+        arguments.game, state=stable_retro.State.NONE, render_mode=None, use_restricted_actions=stable_retro.Actions.ALL
+    )
     color = np.array([int(channel) for channel in arguments.color.split(",")])
     rng = random.Random(arguments.seed)
     rams, centers = [], []

@@ -37,8 +37,7 @@ class Address:
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Go-Explore a stable-retro level to map its milestones and pitfalls.")
     parser.add_argument("--game", required=True)
-    parser.add_argument("--state", required=True)
-    parser.add_argument("--start", type=Path, required=True, help="savestate file, or the literal 'none'")
+    parser.add_argument("--start", type=Path, required=True, help="a state saved from power-on, or 'none' for power-on")
     parser.add_argument("--actions", required=True, help="module:ATTRIBUTE of the (actions, frames, buttons) table")
     parser.add_argument("--cell", required=True, help="RAM addresses with optional /bucket: 0x4C3,0x4D7/24")
     parser.add_argument("--priority", required=True, help="comma separated weights per cell address")
@@ -57,7 +56,12 @@ def load_action_table(reference: str) -> np.ndarray:
 
 class Explorer:
     def __init__(self, arguments: argparse.Namespace) -> None:
-        self.env = stable_retro.make(arguments.game, state=arguments.state, render_mode=None)
+        self.env = stable_retro.make(
+            arguments.game,
+            state=stable_retro.State.NONE,
+            render_mode=None,
+            use_restricted_actions=stable_retro.Actions.ALL,
+        )
         self.env.reset(seed=arguments.seed)
         if str(arguments.start) != "none":
             self._restore(arguments.start.read_bytes())
