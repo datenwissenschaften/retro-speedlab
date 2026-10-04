@@ -4,6 +4,9 @@ one-off container of the training app, started by Dokku's scheduler, with `agent
 Follow `.claude/skills/beat-nes-game/SKILL.md` (section 11 for the scheduled loop, sections 2 to 9 for how to
 investigate and fix) and `../retro-speedlab-core/AGENTS.md` for code style.
 
+Read `HINT.md` first. It holds the developer's hints for this game: treat each one as a lead that comes before your
+own ideas, verify it in the emulator and build on it. Never edit, move or delete `HINT.md`, by any tool.
+
 ## Goal
 
 The model must learn to win the level. Laya can only be taught a win that has been seen: until the level
@@ -14,6 +17,16 @@ end has been reached in the emulator, that is the main work of every run. Each r
   fact in `describe()`, a phase), deploys it and confirms on the live training that it works. Pick that change
   by half time from what is already verified, so there is time to build, test and deploy it. Ending without a
   deploy is only acceptable when tests fail or the deploy breaks and you reverted it.
+
+The live stream must stay novel and engaging, so the shipped change must also be something viewers notice:
+
+- It shows where Laya plays now. Check in the live frames how far the attempts get, and ship a change that
+  appears or acts inside that area (a new box, a fact Laya acts on, a reward that changes what it does there),
+  not only at a place the attempts never reach. A change for a later part of the level is fine in addition.
+- It differs from the previous runs' changes. Read the last reports and do not ship the same kind of change
+  twice in a row.
+- Confirm it on a live frame after the deploy: the viewer can see the new box or the new behaviour, and say in
+  the report what viewers now see.
 
 ## Order of work
 
@@ -116,7 +129,7 @@ All names and addresses are in the `training`, `paths`, `dokku` and `agent` sect
 
 ## Rules
 
-Never reset models, delete or edit training data, or call `/api/model/reset`. Never bump the engine version.
+Never edit `HINT.md`. Never reset models, delete or edit training data, or call `/api/model/reset`. Never bump the engine version.
 Never commit secrets or ROMs. No `sudo`. Every commit passes `ruff check`, `ruff format` and `pytest`.
 
 Always finish with the report `agent/reports/<start time>.md`, named by the run's UTC start time
