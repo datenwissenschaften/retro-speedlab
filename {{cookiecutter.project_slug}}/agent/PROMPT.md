@@ -80,8 +80,8 @@ level, reach the end first and leave the steps on the way for later:
 
 ## Break each level into parts
 
-A level is learned in parts, not as one task. As soon as the route through a level is known (from the
-walkthrough, a movie or the emulator), split it into distinct, manageable states, one per objective in the order
+A level is learned in parts, not as one task. As soon as the route through a level is known (a
+tool-assisted movie's route first, else the walkthrough or the emulator), split it into distinct, manageable states, one per objective in the order
 the game enforces, for example: the menu, then eat until heavy enough, then reach the scale, then leave through
 the door, then the next level's parts.
 
@@ -110,7 +110,9 @@ and **speedrun** (section 8).
   `use_restricted_actions=stable_retro.Actions.ALL`: the default filter drops START and the movie never leaves the
   title screen. Save the emulator state every few hundred frames and at every level change, and look at the frames to see
   where it drifts (the player stops, dies or walks into walls). States from before the drift are as good as the
-  movie's. A movie is only for measuring: never copy its inputs or route into the game package.
+  movie's. Follow the movie's route: save a curriculum seed from the replay where each part begins, and take
+  its order of objectives, waypoints and targets into the states, markers and rewards. Laya still presses
+  every button itself: never put the movie's inputs into the game package.
 - **Explorer from the furthest point.** Continue `explore.py` from the furthest state saved from power-on with the
   world position in the cell, again and again, and commit each new furthest state.
 - **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try

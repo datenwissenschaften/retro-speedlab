@@ -104,7 +104,8 @@ Published knowledge is a hypothesis, not a fact:
 - **Teach the behaviour, not the moves.** The verified steps become the gates of the state machine (section
   3), the targets to mark (markers) and the progress rewards (section 4); the engine's curriculum then starts
   episodes where each mastered phase ends, so Laya is told about and rewarded for each step and learns to reproduce it. Hints stay generic rules (section 5):
-  never copy coordinates, routes or button sequences from a source into the game package.
+  a tool-assisted movie's route (objectives, waypoints, targets) may go into the states, markers and rewards
+  and its replay may provide curriculum seeds, but never copy button sequences into the game package.
 
 ### RAM discovery
 
