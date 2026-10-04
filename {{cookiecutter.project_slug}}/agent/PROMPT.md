@@ -113,11 +113,20 @@ of them. Each one gives Laya the route (the order of objectives, waypoints and t
 and rewards) and, when it replays exactly, curriculum seeds. Laya still presses every button itself: never put
 a source's inputs into the game package. Note in `NOTES.md` what each source gave and how far it got.
 
+**Laya imitates the demonstrations.** At the start of every training session (every two hours, no deploy
+needed) the engine replays every `.bk2` in `agent/demonstrations/` and teaches each state's model the moves the
+demonstration made there, next to its own reward, until the state is mastered. So a demonstration must start at
+power-on in `stable_retro` (the engine refuses any other) and must play well: never commit one that dies, idles
+or fails, it would teach that. Check the log line "Loaded N demonstration decisions for <State>" and
+`imitation_loss` in the model metadata after committing one.
+
 1. **Demonstrations recorded in `stable_retro`.** `.bk2` movies from power-on under `agent/demonstrations/`:
    human play recorded in `stable_retro`, and every successful scripted or search run of the lab. They replay
    exactly. Record every scripted player, beam search or explorer that reaches a new part with
-   `stable_retro.make(..., record=...)` and commit its `.bk2` there, named after the part it reaches, so the
-   next run can replay it instead of searching again.
+   `stable_retro.make(..., record=...)` (from power-on, as `datenwissenschaften.environment.factory` sets the
+   emulator up) and commit its `.bk2` there, named after the part it reaches, so the next run can replay it
+   instead of searching again and Laya imitates it. A compatible tool-assisted movie becomes a demonstration
+   the same way: replay it with recording on, up to where it drifts.
 2. **Compatible tool-assisted movies.** A TASVideos publication (linked in `NOTES.md`) downloads its movie from
    `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
    Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`) with

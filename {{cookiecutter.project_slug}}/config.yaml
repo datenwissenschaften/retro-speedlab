@@ -6,6 +6,7 @@ paths:
   database: working/database.json
   reports: agent/reports
   curriculum: curriculum
+  demonstrations: agent/demonstrations
 
 training:
   game: {{ cookiecutter.game }}
