@@ -60,7 +60,7 @@ First the basics, each done once per game:
 Then **the win, worked backward from the level end**. As long as `NOTES.md` has no verified win flag for the
 level, reach the end first and leave the steps on the way for later:
 
-1. **Get there.** Reach the exit and everything that opens it (scale, bell, door, boss) in the emulator by
+1. **Get there.** Reach the exit and everything that opens it (a switch, a key, a bell, a boss) in the emulator by
    any means: replay a published tool-assisted movie or steer a scripted player along explorer milestones.
    Look at the frames on the way.
 2. **Test the gate directly.** At the gate, do not explore randomly. Set its precondition by poking the RAM (a
@@ -69,7 +69,7 @@ level, reach the end first and leave the steps on the way for later:
    around the event that should satisfy it (eating, picking up the key) to find every byte that changes there,
    and poke those.
 3. **Measure the end.** Diff the RAM around every event at the exit: opening it, entering it, the level
-   changing. Verify the win flag and the exit's condition (for example the weight the scale needs) in at
+   changing. Verify the win flag and the exit's condition (for example the count a switch needs) in at
    least two runs.
 4. **Keep the way.** Save the emulator state, reached from power-on, before each part of the exit and commit it
    as a curriculum seed (`curriculum/<State>.state`) once the state exists, or under `agent/research/` until
@@ -82,11 +82,11 @@ level, reach the end first and leave the steps on the way for later:
 
 A level is learned in parts, not as one task. As soon as the route through a level is known (a
 tool-assisted movie's route first, else the walkthrough or the emulator), split it into distinct, manageable states, one per objective in the order
-the game enforces, for example: the menu, then eat until heavy enough, then reach the scale, then leave through
-the door, then the next level's parts.
+the game enforces, for example: the menu, then collect what the gate needs, then open the gate, then leave through
+the exit, then the next level's parts.
 
 - Each state has one goal, its own question and reward, and a verified transition condition to the next state
-  (skill section 3). Backward transitions cover a lost precondition (the weight drops, so back to eating).
+  (skill section 3). Backward transitions cover a lost precondition (an item is lost, so back to collecting it).
 - The engine saves a curriculum checkpoint only when an episode moves from one state to the next, and once a
   state is mastered it starts later episodes from that checkpoint. A level kept as one state never gets
   checkpoints: the dashboard shows a single state and Laya replays the start of the level forever.
@@ -95,7 +95,7 @@ the door, then the next level's parts.
 - **Split a stalled part.** When a state has trained for six hours (`summary.by_state.<State>.duration_seconds_total`
   in `/api/snapshot` reaches 21600) and has fewer than half its win target
   (`metadata.savestate_curriculum.<State>.wins` < `win_target / 2`), split it into two states at a verified
-  intermediate goal (for example a tail of 2 before a tail of 4), each with its own question, reward, transition
+  intermediate goal (for example half of what a gate needs before all of it), each with its own question, reward, transition
   test and seed from power-on, and deploy. A part that stalls again is split again.
 - This comes before more markers, facts or rewards for a level whose route is known. Pin every transition with a
   test on a real state saved from power-on, and check after the deploy that the dashboard lists the new states.
@@ -153,8 +153,8 @@ When no source reaches a part, use the ways below.
   world position in the cell, again and again, and commit each new furthest state.
 - **Scripted player.** Walk toward a target with the verified world location; jump at walls; restore and try
   another branch when it dies.
-- **RAM pokes.** Set a precondition directly to see what the next step does. Poking the position often leaves
-  the camera behind; poke only values the game reads, and confirm on the frames.
+- **RAM pokes.** Set a precondition directly to see what the next step does. Poking the position does not move
+  the camera; poke only values the game reads, and confirm on the frames.
 
 ## How to work
 
@@ -177,7 +177,9 @@ When no source reaches a part, use the ways below.
 
 Watch the live training for 10 minutes (use `Monitor` to sample the dashboard while you write the report): the
 release runs without errors in the logs, rewards are non-zero, and the action probabilities on the dashboard
-are no longer uniform. If it breaks, revert, redeploy and say so in the report.
+are no longer uniform. When the change touches markers, fetch a live frame and look at it: the boxes sit on
+their sprites and the `nearest_*` facts appear in its status. If it breaks, revert, redeploy and say so in the
+report.
 
 ## Where things are
 

@@ -212,6 +212,7 @@ tempCodeRunnerFile.py
 # Retro Speedlab runtime output
 working/
 *.bk2
+!agent/demonstrations/*.bk2
 
 # Retro Speedlab ROMs: never commit ROM data, legally obtained or not.
 # Only the placeholder below stays tracked.

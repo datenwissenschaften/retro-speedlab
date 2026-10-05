@@ -67,9 +67,9 @@ The engine version is the engine maintainer's decision: never bump it from a gam
 ## 2. Learn the whole game before writing states
 
 Never guess mechanics. Learn them from published sources, verify each one in the emulator and write it into
-`NOTES.md` with the evidence. A state machine built on a wrong mechanic cannot be trained into a win: in Snake
-Rattle 'n' Roll the weight drain while entering the exit counted as damage and ended every winning attempt
-before the win flag set.
+`NOTES.md` with the evidence. A state machine built on a wrong mechanic cannot be trained into a win: in one
+game a resource draining while entering the exit counted as damage and ended every winning attempt before
+the win flag set.
 
 ### Research how each level is beaten
 
@@ -167,7 +167,7 @@ Published knowledge is a hypothesis, not a fact:
   env.data.update_ram()` and poke RAM with `env.unwrapped.data.memory.assign(address, "|u1", value)`. Leave
   the player idle for a few thousand frames at each gate to separate time-based effects from damage.
 - **Time the win**: record every frame from entering the exit to the win flag. Flags often set many frames
-  after other bytes change (the Snake Rattle 'n' Roll win flag set 78 frames after the weight started draining
+  after other bytes change (a win flag can set many frames after a resource starts draining
   into the door); anything that ends the attempt earlier hides the win.
 
 ### Catalogue enemies, power-ups and hazards
@@ -194,6 +194,41 @@ Laya only knows what `describe()` tells it, so every object that hurts or helps 
 When the user names an object you cannot find in the recordings, ask for a screenshot or the place it
 appears instead of guessing a sprite.
 
+### Markers: show what Laya sees
+
+Viewers see what Laya sees as boxes on the gameplay video, nothing else. Every state returns its objects
+twice:
+
+- **`detections()`** returns one `Detection` per object on the current frame. The engine draws each box with
+  its label on every recorded frame, so the stream shows markers on the replayed gameplay.
+- **`describe()`** turns them into facts with `describe_target(player, detections)`
+  (`{"visible", "direction", "distance"}`) under short snake_case names (`nearest_enemy`, `nearest_powerup`,
+  `nearest_item`). Those entries are Laya's input; the stream does not list them.
+
+Build the markers in this order, each verified before the next:
+
+1. **The player** (`player`): a box from the verified on-screen position in RAM, not from a template, so it
+   never jumps to a look-alike. It must sit on the sprite within a few pixels on frames from the start and
+   from later milestones, also while jumping and at screen edges.
+2. **Enemies** (`enemy`): one `TemplateDetector` with every verified enemy pose.
+3. **Power-ups** (`powerup`) and **items to collect** (for example `item`): templates, or a
+   `ColorBlobDetector` for sprites with a distinctive color and a minimum size.
+4. **Targets** of the current phase (a switch, a key, the exit), one detector each, returned only by the states
+   that need them.
+
+Rules:
+
+- One short lowercase label per kind; the label is what viewers read on the box.
+- Drop detections that overlap the player's own sprite (within about 10 px of its center) and anything in
+  the HUD: restrict detectors to the playfield.
+- Detectors run on every frame: keep them cheap (template matching inside the playfield only) and measure
+  the time per frame before deploying.
+- **Prove the markers** on frames from every level you train: draw `state.detections()` with
+  `draw_detections`, tile the frames into a contact sheet and look at it for misses and false positives. Pin
+  each detector with a test on a real frame from `assets/` or a rendered template.
+- **Check them live after the deploy**: fetch a frame from `/api/live/frames`, look at the image for the
+  boxes, and check that its `status.ram` has the `nearest_*` entries.
+
 ### Pitfalls
 
 - **Replays of `.bk2` recordings can drift** from the live run (curriculum restores, reset timing). Never
@@ -202,6 +237,14 @@ appears instead of guessing a sprite.
 - **`scenario.json`'s done condition is ignored** by the engine, because it misfires on the title screen
   (lives read as uninitialized RAM there). The game's states decide game over with `_terminated()`.
 - **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
+- **`RamInfo.location()` is a method** the engine calls every step; override it as a method, never as a
+  property or field. Run the game through the real wrapper for a few hundred steps before deploying, so an
+  interface mismatch fails locally and not on the live training.
+
+## 3. Develop the state machine yourself
+
+Derive the states from the gates, not from a template: one state per gate, in the order the game enforces.
+
 
 ## 3. Develop the state machine yourself
 
@@ -213,15 +256,16 @@ Derive the states from the gates, not from a template: one state per gate, in th
 - `describe()` gives facts only: the target with `visible`, `direction`, `distance`, the nearest enemy and
   power-up, hazards, a few RAM facts. Advice is merged in from `hints.py` (section 5).
 - Split transitions into `_advance()` (the verified forward condition) and `_fallback()` (a lost
-  precondition sends the snake back, for example losing weight before the scale rang goes back to eating).
+  precondition sends the player back, for example losing an item before the gate opened goes back to collecting it).
   `_next()` returns the fallback first. Only forward transitions pay the transition reward; the engine ignores
   backward transitions for curriculum success and checkpoints.
 - `_won()` only in the final state, on the verified win flag.
 - `_terminated()` only on game over. Lost lives and hits cost reward but the attempt continues from the
   respawn, so later parts of the level are practised instead of restarting from the beginning.
-- `_truncated()` after a fixed frame budget per state (for example 3600 frames, 60 s at 60 Hz).
-- The final state must not treat what the exit does to the player as damage (entering the door drained the
-  weight to zero).
+- The engine ends an attempt after three real minutes in one state; `_truncated()` only for an earlier,
+  game-specific end.
+- The final state must not treat what the exit does to the player as damage (an exit may drain a resource
+  to zero).
 
 ## 4. Rewards
 
@@ -287,7 +331,7 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   model reset.
 - **Record what happens where**: every hit or lost life marks its cell as `danger`; every cell the player got
   stuck pushing toward marks `blocked`. Only damage the game really deals counts (not the exit draining
-  weight). Record facts, never hand-entered coordinates.
+  a resource). Record facts, never hand-entered coordinates.
 - **Exploration memory**: count visits per cell across attempts. A searching state without a target heads for
   the least visited neighbouring cell, weighted by the map (danger 20, blocked 10 visits), so the player works
   its way along the frontier instead of pushing into the first wall. Mark the direction the hint suggested,
@@ -422,7 +466,7 @@ scripts.
    walkthrough that is not yet measured, marked, reached by the scripted player and rewarded as its own phase.
    Skip optional steps until every gate of the level is done, unless one blocks a gate. Before working on what leads up to a gate, measure whether its condition is already met: in the live
    frames and the scripted player, check the value the gate needs (a weight, an item count, a key flag). When
-   attempts already reach it, the gate itself (the scale, the door, the boss) is the next work, not its
+   attempts already reach it, the gate itself (the switch, the door, the boss) is the next work, not its
    preparation.
 3. **Reproduce before fixing.** Copy curriculum checkpoints and landmarks from the training data and reproduce the
    blocker in the emulator (scripted hint player, explorer, hit capture, RAM diff). Never guess sprites,
