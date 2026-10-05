@@ -75,15 +75,13 @@ the win flag set.
 
 Before measuring anything, find out from published sources what a player has to do to beat the level being
 trained, with `WebSearch` and `WebFetch`. Use every kind of source, ranked as in `agent/PROMPT.md` ("Sources to learn the game from"): demonstrations
-recorded in `stable_retro` first, then compatible tool-assisted movies, then speedrun and longplay videos, then
-text:
+recorded in `stable_retro` first, then videos (speedruns, tool-assisted runs and longplays), then text:
 
 - **Demonstrations** (`agent/demonstrations/*.bk2`): human play and the lab's own successful runs, replayed
   exactly from power-on.
-- **Tool-assisted runs** (TASVideos publications, obsoleted movies and submissions): the route and, when the
-  movie syncs in `stable_retro`, emulator states along it.
-- **Speedrun and longplay videos** (speedrun.com, YouTube, Twitch archives, World of Longplays): the route, the
-  places of each objective and the tricks that skip parts; the inputs where an input display shows them.
+- **Videos** (YouTube speedruns, TASVideos encodes, speedrun.com, World of Longplays): the route, the places
+  of each objective and the tricks that skip parts; the inputs where an input display shows them. Never replay
+  a movie file's inputs, they do not sync in `stable_retro`; reproduce the route with a scripted player.
 - **Walkthroughs, guides and the original manual** (GameFAQs, StrategyWiki, fan sites, manual scans): the
   level's goal, the order of its gates (what opens the exit), the items, enemies and hazards, and how the level
   ends.
@@ -460,7 +458,7 @@ scripts.
    action stays equally likely. Revert the previous run's change first if its metric got worse. When
    `NOTES.md` has no walkthrough for the level, research it first (section 2). Until the level end has been
    reached in the emulator and its win flag verified, the next blocker is the level end itself: get there by
-   any means (a tool-assisted movie replayed from power-on, the explorer continued from the furthest saved state,
+   any means (a scripted player following a video's route, the explorer continued from the furthest saved state,
    a scripted player, RAM pokes for the exit's preconditions), commit the state saved from power-on before each part
    of the exit as a curriculum seed (section 8), and teach the exit first. Afterwards the next blocker is the first **gate** of the
    walkthrough that is not yet measured, marked, reached by the scripted player and rewarded as its own phase.

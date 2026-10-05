@@ -11,16 +11,16 @@ levels in order. There are no configured savestates.
 
 - The first state of every game is the menu (start the game, choose one player); every level is a later state of
   the same run (section "Break each level into parts"). A level is beaten when its last state is passed.
-- Everything you know about the game comes from published sources (walkthroughs, manuals, articles, tool-assisted
-  movies) and from your own measurements in the emulator. Nobody hands you hints.
+- Everything you know about the game comes from published sources (videos, walkthroughs, manuals, articles) and
+  from your own measurements in the emulator. Nobody hands you hints.
 - **Research first.** While `NOTES.md` has no `## Walkthrough`, start the run on the web, before any emulator
-  work: the game's walkthroughs and manual, its TASVideos page and movies, and speedrun and longplay videos
+  work: videos of the game (speedruns, tool-assisted runs and longplays on YouTube), its walkthroughs and manual
   (section "Sources to learn the game from"). Write what you found, with the URLs, into `NOTES.md`.
 - **No earlier experiments.** Never use knowledge from earlier lab experiments with this game: not from other
   copies or backups of this package, not from caches, and not from this lab's own website, stream or reports
   (retrospeedlab.com). Only this repository, published sources and your own measurements count.
 - Every emulator state you use, for research or for Laya, is one you reached by playing from power-on in this
-  game (scripted inputs, a replayed movie or the explorer). Never use the bundled stable-retro states (for
+  game (scripted inputs, a recorded demonstration or the explorer). Never use the bundled stable-retro states (for
   example `Level1.state`) or state files from elsewhere.
 - **Curriculum seeds.** When Laya cannot yet reach a part, save the raw emulator state (`env.em.get_state()`)
   where that part begins as `curriculum/<State>.state` and commit it. The engine uses it as that state's practice
@@ -67,7 +67,7 @@ Then **the win, worked backward from the level end**. As long as `NOTES.md` has 
 level, reach the end first and leave the steps on the way for later:
 
 1. **Get there.** Reach the exit and everything that opens it (a switch, a key, a bell, a boss) in the emulator by
-   any means: replay a published tool-assisted movie or steer a scripted player along explorer milestones.
+   any means: steer a scripted player along the route a video shows, or along explorer milestones.
    Look at the frames on the way.
 2. **Test the gate directly.** At the gate, do not explore randomly. Set its precondition by poking the RAM (a
    weight, a key, a flag) across its range and try every move and jump onto the target, watching a diff of the
@@ -87,7 +87,7 @@ level, reach the end first and leave the steps on the way for later:
 ## Break each level into parts
 
 A level is learned in parts, not as one task. As soon as the route through a level is known (a
-tool-assisted movie's route first, else the walkthrough or the emulator), split it into distinct, manageable states, one per objective in the order
+video's route first, else the walkthrough or the emulator), split it into distinct, manageable states, one per objective in the order
 the game enforces, for example: the menu, then collect what the gate needs, then open the gate, then leave through
 the exit, then the next level's parts.
 
@@ -131,23 +131,15 @@ or fails, it would teach that. Check the log line "Loaded N demonstration decisi
    exactly. Record every scripted player, beam search or explorer that reaches a new part with
    `stable_retro.make(..., record=...)` (from power-on, as `datenwissenschaften.environment.factory` sets the
    emulator up) and commit its `.bk2` there, named after the part it reaches, so the next run can replay it
-   instead of searching again and Laya imitates it. A compatible tool-assisted movie becomes a demonstration
-   the same way: replay it with recording on, up to where it drifts.
-2. **Compatible tool-assisted movies.** A TASVideos publication (linked in `NOTES.md`) downloads its movie from
-   `<publication url>?handler=Download` (a zipped `.fm2` or `.bk2`, a text list of the buttons per frame).
-   Replay it in `stable_retro` from power-on (`state=stable_retro.State.NONE`) with
-   `use_restricted_actions=stable_retro.Actions.ALL`: the default filter drops START and the movie never leaves
-   the title screen. Use a movie only when it is compatible: its ROM checksum matches the game's ROM in
-   `stable_retro`, and its replay reaches the part you need (check the frames and RAM at the point the movie
-   shows). Save the emulator state every few hundred frames and at every level change; states from before the
-   drift are as good as the movie's. When a movie is not compatible, try the next one on the game's TASVideos
-   page (`https://tasvideos.org/Games/<id>`), including obsoleted ones.
-3. **Speedrun and longplay videos.** Real-time runs (speedrun.com, YouTube, Twitch archives) and longplays
-   (World of Longplays). Download them with `yt-dlp` and cut frames with `ffmpeg`. Read the inputs where the
-   runner shows an input display; otherwise take the route: the order of objectives, the places they happen
-   (match video frames to emulator frames) and the tricks that skip parts. Verify every step in the emulator
-   before it becomes a state, marker or reward.
-4. **Walkthroughs, manuals and RAM maps.** GameFAQs, StrategyWiki, manual scans, Data Crystal and TASVideos
+   instead of searching again and Laya imitates it.
+2. **Videos.** Speedruns, tool-assisted runs (TASVideos encodes) and longplays on YouTube, speedrun.com and
+   World of Longplays. Find them with `WebSearch`, download them with `yt-dlp` and cut frames with `ffmpeg`.
+   Never replay a movie file's inputs: they do not sync in `stable_retro`. Learn from the picture: the order of
+   objectives, where each happens (match video frames to emulator frames), how the player moves through each
+   part and the tricks that skip parts, and the inputs where an input display shows them. Then reproduce that
+   route with a scripted player from power-on, verify it in the emulator and record it as a demonstration
+   (source 1), so Laya imitates it.
+3. **Walkthroughs, manuals and RAM maps.** GameFAQs, StrategyWiki, manual scans, Data Crystal and TASVideos
    game resources: the goal of each level, the order of its gates, and candidate RAM addresses
    (skill section "Research how each level is beaten").
 
@@ -167,7 +159,7 @@ When no source reaches a part, use the ways below.
 - Use the whole time budget. The run continues after you stop until the time is up, so a stop only costs a
   restart. When an attempt is inconclusive, try another way from the list above. Narrow the change to what you
   verified instead of stopping because a part is unclear.
-- Start jobs longer than a minute (explorer, movie replay, scripted players) with the Bash tool's
+- Start jobs longer than a minute (explorer, video downloads, scripted players) with the Bash tool's
   `run_in_background`, never with `nohup ... &`: the shell kills those when the command returns. A job counts as
   finished only when it wrote its result (the explorer's `summary.json`); report the run time you measured.
 - A variable counts as verified when it changes exactly at its event in at least two independent runs. Keep

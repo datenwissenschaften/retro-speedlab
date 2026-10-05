@@ -233,3 +233,4 @@ explore/
 
 # Retro Speedlab daily agent logs
 agent/logs/
+integrations/*/rom.*
