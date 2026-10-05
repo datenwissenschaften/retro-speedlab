@@ -13,6 +13,12 @@ levels in order. There are no configured savestates.
   the same run (section "Break each level into parts"). A level is beaten when its last state is passed.
 - Everything you know about the game comes from published sources (walkthroughs, manuals, articles, tool-assisted
   movies) and from your own measurements in the emulator. Nobody hands you hints.
+- **Research first.** While `NOTES.md` has no `## Walkthrough`, start the run on the web, before any emulator
+  work: the game's walkthroughs and manual, its TASVideos page and movies, and speedrun and longplay videos
+  (section "Sources to learn the game from"). Write what you found, with the URLs, into `NOTES.md`.
+- **No earlier experiments.** Never use knowledge from earlier lab experiments with this game: not from other
+  copies or backups of this package, not from caches, and not from this lab's own website, stream or reports
+  (retrospeedlab.com). Only this repository, published sources and your own measurements count.
 - Every emulator state you use, for research or for Laya, is one you reached by playing from power-on in this
   game (scripted inputs, a replayed movie or the explorer). Never use the bundled stable-retro states (for
   example `Level1.state`) or state files from elsewhere.
