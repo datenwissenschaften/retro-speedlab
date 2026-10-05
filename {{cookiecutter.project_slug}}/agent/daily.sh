@@ -15,6 +15,13 @@ source "${PROJECT_DIR}/dokku/settings.sh"
 readonly DOKKU_HOST="$(setting dokku.host)"
 readonly HOST_ADDRESS="$(setting dokku.host_address)"
 readonly DEADLINE="$(( $(date +%s) + $(setting agent.hours) * 3600 ))"
+readonly LAB_RUN_MARKER="${WORKSPACE_DIR}/.lab-run"
+finish() {
+    rm -f "${LAB_RUN_MARKER}"
+    restore_workspace_owner
+}
+trap finish EXIT
+echo "${DEADLINE}" >"${LAB_RUN_MARKER}"
 readonly WRAP_UP_SECONDS=1200
 readonly MODEL="$(setting agent.model)"
 readonly AGENT_KEY="/workspace/.ssh/agent_key"

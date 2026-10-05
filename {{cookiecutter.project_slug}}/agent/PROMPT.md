@@ -34,19 +34,19 @@ end has been reached in the emulator, that is the main work of every run. Each r
 
 - It moves the furthest verified point toward the level end.
 - It ships at least one verified change that gives Laya a better signal to learn from (a reward, a marker, a
-  fact in `describe()`, a phase), deploys it and confirms on the live training that it works. Pick that change
+  fact in `describe()`, a phase), deploys it and confirms through the real wrapper that it works. Pick that change
   by half time from what is already verified, so there is time to build, test and deploy it. Ending without a
   deploy is only acceptable when tests fail or the deploy breaks and you reverted it.
 
 The live stream must stay novel and engaging, so the shipped change must also be something viewers notice:
 
-- It shows where Laya plays now. Check in the live frames how far the attempts get, and ship a change that
+- It shows where Laya plays now. Check in the latest recorded attempts how far they get, and ship a change that
   appears or acts inside that area (a new box, a fact Laya acts on, a reward that changes what it does there),
   not only at a place the attempts never reach. A change for a later part of the level is fine in addition.
 - It differs from the previous runs' changes. Read the last reports and do not ship the same kind of change
   twice in a row.
-- Confirm it on a live frame after the deploy: the viewer can see the new box or the new behaviour, and say in
-  the report what viewers now see.
+- Confirm it on frames from the real wrapper: the viewer will see the new box or the new behaviour, and say in
+  the report what viewers will see once training resumes.
 
 ## Order of work
 
@@ -173,11 +173,13 @@ When no source reaches a part, use the ways below.
 
 ## After the deploy
 
-Watch the live training for 10 minutes (use `Monitor` to sample the dashboard while you write the report): the
-release runs without errors in the logs, rewards are non-zero, and the action probabilities on the dashboard
-are no longer uniform. When the change touches markers, fetch a live frame and look at it: the boxes sit on
-their sprites and the `nearest_*` facts appear in its status. If it breaks, revert, redeploy and say so in the
-report.
+Laya's training pauses while your run is active (the engine waits while `/workspace/.lab-run` holds your
+deadline, and the stream tells viewers the lab is upgrading the game), so there are no new live attempts
+during the run. After the deploy, check that the release starts without errors in the logs and that the
+dashboard lists the new states. Prove rewards, facts and markers by playing the deployed package through the
+real wrapper from power-on for a few hundred steps: rewards are non-zero, and the boxes sit on their sprites
+on frames drawn with `draw_detections`. If it breaks, revert, redeploy and say so in the report. The next run
+starts by measuring how the live training did since this one.
 
 ## Where things are
 
