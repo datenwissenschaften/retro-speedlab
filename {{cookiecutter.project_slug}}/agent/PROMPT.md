@@ -199,7 +199,7 @@ All names and addresses are in the `training`, `paths`, `dokku` and `agent` sect
 - Training data (read-only, copy to `/tmp` before use): `/app/working` with `database.json`,
   `cache/curriculum/<game>/` (curriculum checkpoints, `landmarks.json`) and `recordings/`.
 - Dashboard API: `http://<dokku.host_address>/api/snapshot`, `/api/live/episode`,
-  `/api/live/frames?generation=<g>&episode=<id>&start=<n>`.
+  `/api/live/statuses?generation=<g>&episode=<id>&start=<n>` and `/api/live/video?generation=<g>&episode=<id>`.
 - Dokku: `ssh <dokku.host> logs <dokku.app> --num 500`, `ssh <dokku.host> config:get <dokku.app> RELEASE`.
 - Deploy: `dokku/deploy.sh` (commit the engine first when it changed). Training resumes from its checkpoints.
 - Reports: `agent/reports/<date -u +%F>.md`. Facts you verified, with their evidence, go into `NOTES.md`;

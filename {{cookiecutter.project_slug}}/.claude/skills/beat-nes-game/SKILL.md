@@ -224,14 +224,14 @@ Rules:
 - **Prove the markers** on frames from every level you train: draw `state.detections()` with
   `draw_detections`, tile the frames into a contact sheet and look at it for misses and false positives. Pin
   each detector with a test on a real frame from `assets/` or a rendered template.
-- **Check them live after the deploy**: fetch a frame from `/api/live/frames`, look at the image for the
+- **Check them live after the deploy**: cut a frame from `/api/live/video` with `ffmpeg`, look at the image for the
   boxes, and check that its `status.ram` has the `nearest_*` entries.
 
 ### Pitfalls
 
 - **Replays of `.bk2` recordings can drift** from the live run (curriculum restores, reset timing). Never
   analyse training behaviour from `.bk2` replays; use the live per-frame status
-  (`/api/live/frames`) or runs started from states you saved.
+  (`/api/live/statuses` and `/api/live/video`) or runs started from states you saved.
 - **`scenario.json`'s done condition is ignored** by the engine, because it misfires on the title screen
   (lives read as uninitialized RAM there). The game's states decide game over with `_terminated()`.
 - **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
@@ -356,9 +356,11 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 
 ## 8. How Laya learns in the engine (verify before changing)
 
-- One checkpoint per state: `<paths.models>/<game>/<State>/laya.pt` (weights, 8-bit AdamW,
-  trust region, trained decisions). The active state's model is swapped into the single GPU slot; the next
-  state's checkpoint is prefetched into RAM and saves are written in the background.
+- Laya is a frozen reader: one shared copy of the pretrained model turns the state text and question into one
+  vector per option and a summary vector. Each state has its own small trainable heads on top: a policy head
+  (initialised from Laya's own scorer, so a fresh state starts with Laya's judgement) and a value head. One
+  checkpoint per state, `<paths.models>/<game>/<State>/laya.pt`, holds only the heads, the optimizer and the
+  trained decisions; switching states swaps the small heads.
 - Every attempt boots the game at power-on with every button, like a real speedrun: the title screen and the
   choice of one player are the first state (a `Menu` state), and every level is a later state of the same
   run. There are no configured savestates; never use the bundled stable-retro states (`Level1.state`).
@@ -381,15 +383,12 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   frame, so faster wins score higher.
 - Options are shuffled by a stable hash of state and question. Without it Laya gives about 97% to the first
   listed option and every fresh model starts stuck on one action.
-- Group-relative policy gradient with importance weights for the exploration mixture (20% random actions,
-  annealed to 5% over 50k decisions). Keep the importance weights: without them the policy saturates on
-  wrong choices.
-- The trust region targets KL 0.01 per update: it grows the step by the square root of the shortfall (at most
-  ×10) and shrinks it on overshoot; an overshooting update is blended back toward a CPU weight snapshot.
-- Float16 GPUs (for example Turing, RTX 20xx) need learning-rate scales around 10³–10⁴; bfloat16 is noisier
-  (7-bit mantissa) and relies on backtracking.
-- The entropy bonus is a small constant (0.001). An adaptive entropy target pushed every model toward
-  uniform play and unlearned correct choices.
+- PPO on the heads (`laya/ppo.py`): rollouts of 256 decisions per state, GAE (γ 0.99, λ 0.95) with the value
+  head as baseline, 4 epochs of minibatches of 64, clipped ratio 0.2 against the behaviour probability of the
+  exploration mixture (20 % random actions while learning, 5 % once mastered), value loss 0.5, entropy bonus
+  0.01, AdamW 1e-3. Updates touch only the heads; the reader never changes.
+- The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
+  `clip_fraction`, `explained_variance` and `imitation_loss` of the last update.
 - Changing what a model sees (option order, observation layout, action or question texts) requires a new
   `MODEL_LAYOUT` value in `training/identity.py`; training then starts fresh once. Moving code (for example
   into `hints.py`) without changing the observation needs no reset. Never use the engine version for this.
@@ -398,8 +397,8 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 
 Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.curricula`, `summary`
 with `full_run_episodes` and `full_run_wins`, `server.release`) and `/api/live/episode`,
-`/api/live/frames?generation=<g>&episode=<id>&start=<n>` (per-frame status with probabilities, action, state,
-observation and events, and JPEG frames to look at).
+`/api/live/statuses?generation=<g>&episode=<id>&start=<n>` (per-frame status with probabilities, action, state
+and observation) and `/api/live/video?generation=<g>&episode=<id>` (the attempt as an H.264 video).
 
 Compute per state from the live frames: how often the chosen action equals the hinted `move`, the average
 probability of the hinted move, weight and life changes with the frame they happen on, and time in water or
@@ -407,9 +406,10 @@ stuck.
 
 | Symptom | Cause | Action |
 |---|---|---|
-| One action at 100%, entropy near 0 | collapse | check option shuffle, importance weights, trust region; start the state fresh |
-| `learning_rate_scale` at its maximum, `kl` far below 0.01 | steps too small | widen the scale range |
-| Probabilities near uniform for a long time | entropy pressure or no reward signal | check the entropy constant and the state's rewards |
+| One action at 100%, entropy near 0 | collapse | check option shuffle and the state's rewards; start the state fresh |
+| `explained_variance` near 0 for a long time | the value head cannot predict the reward | make the reward depend on facts in the state text |
+| `clip_fraction` above 0.3 or `approx_kl` above 0.05 | updates too large | lower the head learning rate |
+| Probabilities near uniform for a long time | no reward signal | check that the state's rewards change with Laya's moves |
 | Laya ignores the hint in a searching state | exploration reward pulls elsewhere | stop exploration once a route is known |
 | Stuck at the same place until the timeout | straight-line hint into a wall | check the route and the stuck alternation with the scripted player |
 | Stuck in the first corner of a new level | no target known, no hint | check the exploring hint and that stuck directions are marked `blocked` |
@@ -452,7 +452,7 @@ scripts.
 
 1. **Measure.** Read the dashboard (`/api/snapshot`: the run's summary in `summary.by_savestate`,
    `metadata.curricula`, `metadata.stories`, `metadata.run`), the live attempts (`/api/live/episode`,
-   `/api/live/frames`), and per level the landmarks, routes and safety map in the training data. Compare with
+   `/api/live/statuses` and `/api/live/video`), and per level the landmarks, routes and safety map in the training data. Compare with
    the last reports in `agent/reports/`. Record per level: attempts, full-run wins, the curriculum phase that
    blocks, where attempts end, hint-following rate, the action probabilities, and whether the previous run's
    change moved its metric.
