@@ -136,12 +136,18 @@ or fails, it would teach that. Check the log line "Loaded N demonstration decisi
    exactly. Record every scripted player, beam search or explorer that reaches a new part with
    `stable_retro.make(..., record=...)` (from power-on, as `datenwissenschaften.environment.factory` sets the
    emulator up) and commit its `.bk2` there, named after the part it reaches, so the next run can replay it
-   instead of searching again and Laya imitates it.
+   instead of searching again and Laya imitates it. **This is required:** every run leaves at least one new
+   demonstration for a state the curriculum practises or will practise next, whenever a scripted player
+   reproduced that part. A part reached only by random search, with deaths or idle waiting, is not a
+   demonstration: replay the route cleanly with a scripted player first.
 2. **Videos.** Speedruns, tool-assisted runs (TASVideos encodes) and longplays on YouTube, speedrun.com and
    World of Longplays. Find them with `WebSearch`, download them with `yt-dlp` and cut frames with `ffmpeg`.
    Never replay a movie file's inputs: they do not sync in `stable_retro`. Learn from the picture: the order of
    objectives, where each happens (match video frames to emulator frames), how the player moves through each
-   part and the tricks that skip parts, and the inputs where an input display shows them. Then reproduce that
+   part and the tricks that skip parts, and the inputs where an input display shows them. Where the route is
+   hard (a jump onto a platform, getting onto a scale, a narrow passage), cut that stretch frame by frame
+   (`ffmpeg -ss <start> -t <seconds> -vf fps=<video fps>`), note the direction and jump timing per frame and copy
+   that timing into the scripted player. Then reproduce that
    route with a scripted player from power-on, verify it in the emulator and record it as a demonstration
    (source 1), so Laya imitates it.
 3. **Walkthroughs, manuals and RAM maps.** GameFAQs, StrategyWiki, manual scans, Data Crystal and TASVideos
