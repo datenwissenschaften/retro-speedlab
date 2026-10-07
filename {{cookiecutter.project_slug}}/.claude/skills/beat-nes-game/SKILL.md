@@ -366,6 +366,9 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   run. There are no configured savestates; never use the bundled stable-retro states (`Level1.state`).
 - The curriculum trains the states in order. A state's checkpoint is saved automatically when an attempt first
   moves into it; once the states before it are mastered (8 wins each), attempts start from that checkpoint.
+  A win only counts if it takes at most 25 % more steps than the fastest win of that state or level so far
+  (`ReverseCurriculum.SPEED_MARGIN`; logged as "Too slow for <State>"), so mastery means fast, not just lucky.
+  Keep a small cost per step in every state's reward so the fastest route also earns the most.
   A raw emulator state (`env.em.get_state()`) saved as `curriculum/<State>.state` (`paths.curriculum`) seeds a
   state's checkpoint until the engine saved its own: the lab plays from power-on to where a part begins and
   hands Laya that start, part by part toward a full game clear. The stream and the website show the curriculum.
