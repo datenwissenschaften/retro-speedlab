@@ -389,7 +389,12 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 - PPO on the heads (`laya/ppo.py`): rollouts of 256 decisions per state, GAE (γ 0.99, λ 0.95) with the value
   head as baseline, 4 epochs of minibatches of 64, clipped ratio 0.2 against the behaviour probability of the
   exploration mixture (20 % random actions while learning, 5 % once mastered), value loss 0.5, entropy bonus
-  0.01, AdamW 1e-3. Updates touch only the heads; the reader never changes.
+  0.01, AdamW 3e-4. Updates touch only the heads; the reader never changes.
+- Training runs one emulator per CPU core minus two (`metadata.run.emulators`). The stream shows the first;
+  the others practise in worker processes, share the curriculum files and fill the same per-state rollouts
+  (GAE never runs across emulators). Laya reads all of them in one batch per step; the GPU caps this at about
+  100 decisions per second. Curriculum wins and "Too slow" lines in the logs come from every emulator, but only
+  the first one's attempts appear on the stream, in videos and as uploads.
 - The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
   `clip_fraction`, `explained_variance` and `imitation_loss` of the last update.
 - Changing what a model sees (option order, observation layout, action or question texts) requires a new
