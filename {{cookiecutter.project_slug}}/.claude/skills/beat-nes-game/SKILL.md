@@ -366,8 +366,9 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   run. There are no configured savestates; never use the bundled stable-retro states (`Level1.state`).
 - The curriculum trains the states in order. A state's checkpoint is saved automatically when an attempt first
   moves into it; once the states before it are mastered (8 wins each), attempts start from that checkpoint.
-  A win only counts if it takes at most 25 % more steps than the fastest win of that state or level so far
-  (`ReverseCurriculum.SPEED_MARGIN`; logged as "Too slow for <State>"), so mastery means fast, not just lucky.
+  A win only counts if it takes at most 25 % more steps than the median of that state's or level's last 8 wins
+  (`ReverseCurriculum.SPEED_MARGIN`; logged as "Too slow for <State>"), so mastery means fast and consistent,
+  while one lucky fast win never blocks it.
   Keep a small cost per step in every state's reward so the fastest route also earns the most.
   A raw emulator state (`env.em.get_state()`) saved as `curriculum/<State>.state` (`paths.curriculum`) seeds a
   state's checkpoint until the engine saved its own: the lab plays from power-on to where a part begins and
@@ -385,7 +386,9 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   rings, new screen), never at an unverified RAM threshold or an invisible count. The best replay of a state
   must stop right after the event its question names. States that only count further towards the same goal,
   or whose boundary is not visible, are merged back into one (`agent/PROMPT.md`, "Merge parts again"); merging
-  and splitting again later is fine.
+  and splitting again later is fine. The stream keeps per state its shortest successful attempt (the
+  highest-scoring one only until a first success); at the next start after a merge, the replays and videos of
+  states that no longer exist are deleted.
 - Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
   when its phase begins. After 8 full-run wins every attempt is a speedrun with an extra cost of 0.005 per
   frame, so faster wins score higher.
