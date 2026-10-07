@@ -97,6 +97,11 @@ the exit, then the next level's parts.
   state is mastered it starts later episodes from that checkpoint. A level kept as one state never gets
   checkpoints: the dashboard shows a single state and Laya replays the start of the level forever.
 - Seed each part that Laya cannot reach yet (section "Like a real speedrun").
+- **Group each level's parts.** `GameWrapper.levels` lists every level with its states in order, e.g.
+  `(("Level 1", (Play, Feed, Grow, Scale, Door)),)`. When all states of a level are mastered, the engine trains
+  the whole level from its first state until it is beaten (8 wins), measures the level's time, and the stream
+  shows the level as one node with its best and last time. Add a level only once it ends in a verified win or
+  exit, and add every new state of that level to it.
 - Keep each part small enough that Laya can finish it within one attempt (three real minutes per state).
 - **Split a stalled part.** When a state has trained for six hours (`summary.by_state.<State>.duration_seconds_total`
   in `/api/snapshot` reaches 21600) and has fewer than half its win target

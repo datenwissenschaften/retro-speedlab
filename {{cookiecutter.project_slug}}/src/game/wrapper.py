@@ -11,3 +11,4 @@ class GameWrapper(StateMachineGymWrapper[GameRam]):
     ram_info_cls = GameRam
     action_table = ACTION_TABLE
     action_descriptions = ACTION_DESCRIPTIONS
+    levels = ()

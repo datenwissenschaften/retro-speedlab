@@ -371,6 +371,9 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   (`agent/demonstrations/`) is replayed at the start of each session, each decision is labelled with the
   nearest action, and every update of an unmastered state adds a cross-entropy term toward those moves
   (`imitation_loss`). Commit only demonstrations that play well.
+- Levels (`GameWrapper.levels`): once every state of a level is mastered, the level itself becomes a
+  curriculum target; attempts start at the level's first state and succeed when they leave the level or win.
+  The per-state models still take turns inside the run. Best and last level times go to `level_times`.
 - An attempt ends after three real minutes in one state. A state below half its win target after six hours
   of attempts is too big: split it in two (`agent/PROMPT.md`, "Split a stalled part").
 - Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
