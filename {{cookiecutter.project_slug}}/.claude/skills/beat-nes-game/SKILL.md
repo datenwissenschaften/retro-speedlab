@@ -386,8 +386,8 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   rings, new screen), never at an unverified RAM threshold or an invisible count. The best replay of a state
   must stop right after the event its question names. States that only count further towards the same goal,
   or whose boundary is not visible, are merged back into one (`agent/PROMPT.md`, "Merge parts again"); merging
-  and splitting again later is fine. The stream keeps per state its shortest successful attempt (the
-  highest-scoring one only until a first success); at the next start after a merge, the replays and videos of
+  and splitting again later is fine. The stream keeps per state only its shortest successful attempt;
+  a state without a success on the stream has no replay. At the next start after a merge, the replays and videos of
   states that no longer exist are deleted.
 - Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
   when its phase begins. After 8 full-run wins every attempt is a speedrun with an extra cost of 0.005 per
