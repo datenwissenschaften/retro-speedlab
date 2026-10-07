@@ -387,7 +387,8 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   must stop right after the event its question names. States that only count further towards the same goal,
   or whose boundary is not visible, are merged back into one (`agent/PROMPT.md`, "Merge parts again"); merging
   and splitting again later is fine. The stream keeps per state only its shortest successful attempt;
-  a state without a success on the stream has no replay. At the next start after a merge, the replays and videos of
+  a state without a success on the stream has no replay. Once a level is mastered as a whole, the replays
+  of its states are dropped and only the level's own replay remains. At the next start after a merge, the replays and videos of
   states that no longer exist are deleted.
 - Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
   when its phase begins. After 8 full-run wins every attempt is a speedrun with an extra cost of 0.005 per
