@@ -53,6 +53,22 @@ The live stream must stay novel and engaging, so the shipped change must also be
 The level being trained is the first unbeaten one. When `NOTES.md` has no walkthrough for it yet, research
 it first in this run.
 
+**Every run starts by double-checking the curriculum**, before any other work, and reports it in a section
+"Curriculum check":
+
+- List the states of `GameWrapper.levels` in order with their wins, best win steps and training time
+  (`/api/snapshot`). Does the list read like the game's own objectives for the level, in the order the game
+  enforces them, with no gap and nothing twice?
+- For each state, watch its best replay (`/api/live/statuses`, `/api/live/video`; cut frames with `ffmpeg`):
+  it starts where the previous state ends and stops right after the visible event its question names. A replay
+  that plays on past its goal, stops before it, or shows a different goal than the question means a wrong
+  transition or a wrong question.
+- Check every transition condition against the screen: the RAM value it reads changes exactly when the event
+  is visible, in at least two replays or emulator runs.
+- Apply the rules of "Break each level into parts": fix wrong transitions and questions first, merge states
+  that are not separated by a visible event or only count towards the same goal, split stalled ones. Commit the
+  fixes with their tests before new work. When everything checks out, say so with the evidence.
+
 First the basics, each done once per game:
 
 1. **Learning signal.** If the reward is constant (for example a skeleton `Play` state returning 0), the model
@@ -112,6 +128,18 @@ the exit, then the next level's parts.
   (`metadata.savestate_curriculum.<State>.wins` < `win_target / 2`), split it into two states at a verified
   intermediate goal (for example half of what a gate needs before all of it), each with its own question, reward, transition
   test and seed from power-on, and deploy. A part that stalls again is split again.
+- **Every boundary is a visible game event.** A state ends at something a viewer of the stream can see and
+  name: an item picked up, the body growing, a gate or door opening, a bell ringing, a new screen or level. Never
+  end a state at a threshold of a RAM byte whose meaning is not verified, or at an arbitrary count no one can see
+  on screen. Check the best replay of each state (`/api/live/video`): it must stop right after the event its
+  question names. If it plays on after the goal visibly happened, or stops before it, the transition is wrong:
+  fix it (verify the byte against the screen) before anything else.
+- **Merge parts again.** Splitting is temporary. Merge neighbouring states back into one when their boundary is
+  not a visible event (see above), when they only count further towards the same goal (eat more, collect more),
+  or when all of them are mastered and the merged part fits into one attempt. Keep the merged state's name and
+  question describing the visible goal, remove the merged classes and their curriculum seeds, update
+  `GameWrapper.levels`, the transition tests and the demonstrations' state labels, and deploy. Merging and
+  splitting again later is fine; the curriculum should read like the game's own objectives.
 - This comes before more markers, facts or rewards for a level whose route is known. Pin every transition with a
   test on a real state saved from power-on, and check after the deploy that the dashboard lists the new states.
 

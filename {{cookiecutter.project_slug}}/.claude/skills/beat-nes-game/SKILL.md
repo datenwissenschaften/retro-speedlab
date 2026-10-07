@@ -381,6 +381,11 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   The per-state models still take turns inside the run. Best and last level times go to `level_times`.
 - An attempt ends after three real minutes in one state. A state below half its win target after six hours
   of attempts is too big: split it in two (`agent/PROMPT.md`, "Split a stalled part").
+- Every state ends at a visible game event a viewer can name (item picked up, body grows, door opens, bell
+  rings, new screen), never at an unverified RAM threshold or an invisible count. The best replay of a state
+  must stop right after the event its question names. States that only count further towards the same goal,
+  or whose boundary is not visible, are merged back into one (`agent/PROMPT.md`, "Merge parts again"); merging
+  and splitting again later is fine.
 - Once every state is mastered, every episode is a full run from power-on, and each state's model takes over
   when its phase begins. After 8 full-run wins every attempt is a speedrun with an extra cost of 0.005 per
   frame, so faster wins score higher.
@@ -402,6 +407,10 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   into `hints.py`) without changing the observation needs no reset. Never use the engine version for this.
 
 ## 9. Diagnose a run
+
+Every run starts with the curriculum check of `agent/PROMPT.md` ("Order of work"): the states read like the
+game's objectives, each best replay stops right after the visible event its question names, and every
+transition is verified against the screen. Fix, merge or split before new work.
 
 Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.curricula`, `summary`
 with `full_run_episodes` and `full_run_wins`, `server.release`) and `/api/live/episode`,
