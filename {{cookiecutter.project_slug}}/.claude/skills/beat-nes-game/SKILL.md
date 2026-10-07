@@ -405,6 +405,12 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   the first one's attempts appear on the stream, in videos and as uploads.
 - The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
   `clip_fraction`, `explained_variance` and `imitation_loss` of the last update.
+- `metadata.state_models.<State>` keeps every state's `num_timesteps`, `entropy_share` (entropy over its
+  maximum, 1.0 = uniform) and `explained_variance`. Laya's reader is frozen, so the heads can only learn what
+  the observation text tells them. A state that stays near `entropy_share` 1.0 with `explained_variance` near 0
+  is blind: its observation lacks the player's position and the direction to its goal and dangers. Many
+  emulators can still master such a state by chance, so mastery alone does not prove Laya learned it. Add the
+  missing facts; never raise the learning rate or the reward to force it.
 - Changing what a model sees (option order, observation layout, action or question texts) requires a new
   `MODEL_LAYOUT` value in `training/identity.py`; training then starts fresh once. Moving code (for example
   into `hints.py`) without changing the observation needs no reset. Never use the engine version for this.
