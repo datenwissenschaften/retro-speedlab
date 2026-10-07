@@ -6,7 +6,7 @@ source "${PROJECT_DIR}/dokku/settings.sh"
 readonly DOKKU_HOST="$(setting dokku.host)"
 readonly APP="$(setting dokku.app)"
 readonly SCHEDULE="$(setting agent.schedule)"
-readonly TODAY="$(date +%Y.%m.%d)"
+readonly TODAY="$(date -u +%Y.%m.%d)"
 
 if ! git -C "${PROJECT_DIR}" diff --quiet HEAD; then
     echo "Commit your changes before deploying." >&2
