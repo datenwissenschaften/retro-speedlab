@@ -411,8 +411,9 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   decisions per state with minibatches of 256. Updates touch only heads and advisors; the reader never changes.
 - Training runs one emulator per CPU core minus two (`metadata.run.emulators`). The stream shows the first,
   played by Laya; the others practise in worker processes without recording, played by the advisors, and
-  share the curriculum files. Curriculum wins and "Too slow" lines in the logs come from every emulator, but
-  only the first one's attempts appear on the stream, in videos and as uploads.
+  share the curriculum files. Practice emulators save new start points and practise Laya's active state, but
+  only Laya's attempts on the first emulator count as curriculum wins, "Too slow" lines, level times, stream
+  replays, videos and uploads, so mastery always means Laya mastered it. The stream never shows the advisor.
 - The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
   `clip_fraction`, `explained_variance` and `imitation_loss` of the last update.
 - `metadata.state_models.<State>` keeps every state's `num_timesteps`, `entropy_share` (entropy over its
