@@ -406,13 +406,15 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   listed option and every fresh model starts stuck on one action.
 - PPO (`ppo.py`, shared by Laya and the advisors): GAE (γ 0.99, λ 0.95); a time cap cuts a segment and
   bootstraps from the value instead of counting as a death. Laya's heads update after 256 of its own decisions
-  per state, 4 epochs of minibatches of 64, clipped ratio 0.2 against the behaviour probability of the
-  exploration mixture (20 % random actions while learning, 5 % once mastered), value loss 0.5, entropy bonus
+  per state, 4 epochs of minibatches of 64, ratio 0.2 against Laya's own policy, each sample weighted by its
+  policy over behaviour probability (capped at 1) for the exploration mixture (5 % random actions while
+  learning, 1 % once mastered), value loss 0.5, entropy bonus
   0.01, AdamW 3e-4, policy and value gradients clipped separately. Advisors update after 2048 practice
   decisions per state with minibatches of 256. Updates touch only heads and advisors; the reader never changes.
 - Training runs one emulator per CPU core minus two (`metadata.run.emulators`). The stream shows the first,
   played by Laya; the others practise in worker processes without recording, played by the advisors, and
-  share the curriculum files. Practice emulators save new start points and practise Laya's active state, but
+  share the curriculum files. `metadata.advisors.<State>.exits` counts where their practice leaves each state
+  (for example how often Bell2 practice reaches Door2). Practice emulators save new start points and practise Laya's active state, but
   only Laya's attempts on the first emulator count as curriculum wins, "Too slow" lines, level times, stream
   replays, videos and uploads, so mastery always means Laya mastered it. The stream never shows the advisor.
 - The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
