@@ -252,7 +252,9 @@ Derive the states from the gates, not from a template: one state per gate, in th
 - `description` is Laya's question: one short line, `"You are the <hero>. <goal>. Which move?"`. Long
   questions cost tokens and overflow the stream panel.
 - `describe()` gives facts only: the target with `visible`, `direction`, `distance`, the nearest enemy and
-  power-up, hazards, a few RAM facts. Advice is merged in from `hints.py` (section 5).
+  power-up, hazards, a few RAM facts. Advice is merged in from `hints.py` (section 5). Give every position
+  relative to the player as `Offset(right, down)` from `datenwissenschaften.states.facts`; Laya reads it as
+  `"34 right, 12 below"` and recovers the direction far better than from signed `dx`/`dy` numbers.
 - Split transitions into `_advance()` (the verified forward condition) and `_fallback()` (a lost
   precondition sends the player back, for example losing an item before the gate opened goes back to collecting it).
   `_next()` returns the fallback first. Only forward transitions pay the transition reward; the engine ignores
@@ -361,6 +363,12 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   (initialised from Laya's own scorer, so a fresh state starts with Laya's judgement) and a value head. One
   checkpoint per state, `<paths.models>/<game>/<State>/laya.pt`, holds only the heads, the optimizer and the
   trained decisions; switching states swaps the small heads.
+- A fast advisor coaches Laya (`advisor/`): every emulator but the first is played by a small actor-critic per
+  state that reads the RAM plus the facts and learns with PPO at emulator speed (`<State>/advisor.pt`). On the
+  first emulator, the one on the stream, Laya decides every move; it reads the advisor's view as the fact
+  `"advisor": "right 82%, jump 10%"` and its heads imitate the advisor's choice. A state where the advisor
+  learns (`metadata.advisors.<State>`: `entropy` falling, `explained_variance` rising) but Laya does not follow
+  needs clearer facts; a state where neither learns needs a reward that pays for progress.
 - Every attempt boots the game at power-on with every button, like a real speedrun: the title screen and the
   choice of one player are the first state (a `Menu` state), and every level is a later state of the same
   run. There are no configured savestates; never use the bundled stable-retro states (`Level1.state`).
@@ -380,7 +388,7 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
 - Levels (`GameWrapper.levels`): once every state of a level is mastered, the level itself becomes a
   curriculum target; attempts start at the level's first state and succeed when they leave the level or win.
   The per-state models still take turns inside the run. Best and last level times go to `level_times`.
-- An attempt ends after three real minutes in one state. A state below half its win target after six hours
+- An attempt ends after three minutes of game time in one state, counted in emulator frames. A state below half its win target after six hours
   of attempts is too big: split it in two (`agent/PROMPT.md`, "Split a stalled part").
 - Every state ends at a visible game event a viewer can name (item picked up, body grows, door opens, bell
   rings, new screen), never at an unverified RAM threshold or an invisible count. The best replay of a state
@@ -395,19 +403,22 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   frame, so faster wins score higher.
 - Options are shuffled by a stable hash of state and question. Without it Laya gives about 97% to the first
   listed option and every fresh model starts stuck on one action.
-- PPO on the heads (`laya/ppo.py`): rollouts of 256 decisions per state, GAE (γ 0.99, λ 0.95) with the value
-  head as baseline, 4 epochs of minibatches of 64, clipped ratio 0.2 against the behaviour probability of the
+- PPO (`ppo.py`, shared by Laya and the advisors): GAE (γ 0.99, λ 0.95); a time cap cuts a segment and
+  bootstraps from the value instead of counting as a death. Laya's heads update after 256 of its own decisions
+  per state, 4 epochs of minibatches of 64, clipped ratio 0.2 against the behaviour probability of the
   exploration mixture (20 % random actions while learning, 5 % once mastered), value loss 0.5, entropy bonus
-  0.01, AdamW 3e-4. Updates touch only the heads; the reader never changes.
-- Training runs one emulator per CPU core minus two (`metadata.run.emulators`). The stream shows the first;
-  the others practise in worker processes, share the curriculum files and fill the same per-state rollouts
-  (GAE never runs across emulators). Laya reads all of them in one batch per step; the GPU caps this at about
-  100 decisions per second. Curriculum wins and "Too slow" lines in the logs come from every emulator, but only
-  the first one's attempts appear on the stream, in videos and as uploads.
+  0.01, AdamW 3e-4, policy and value gradients clipped separately. Advisors update after 2048 practice
+  decisions per state with minibatches of 256. Updates touch only heads and advisors; the reader never changes.
+- Training runs one emulator per CPU core minus two (`metadata.run.emulators`). The stream shows the first,
+  played by Laya; the others practise in worker processes without recording, played by the advisors, and
+  share the curriculum files. Curriculum wins and "Too slow" lines in the logs come from every emulator, but
+  only the first one's attempts appear on the stream, in videos and as uploads.
 - The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
   `clip_fraction`, `explained_variance` and `imitation_loss` of the last update.
 - `metadata.state_models.<State>` keeps every state's `num_timesteps`, `entropy_share` (entropy over its
-  maximum, 1.0 = uniform) and `explained_variance`. Laya's reader is frozen, so the heads can only learn what
+  maximum, 1.0 = uniform), `explained_variance` and `stalled` (true after 200 000 decisions with a smoothed
+  `entropy_share` of at least 0.9 and `explained_variance` below 0.1; the log warns "Laya is stalled in" and the
+  dashboard marks the state red). Laya's reader is frozen, so the heads can only learn what
   the observation text tells them. A state that stays near `entropy_share` 1.0 with `explained_variance` near 0
   is blind: its observation lacks the player's position and the direction to its goal and dangers. Many
   emulators can still master such a state by chance, so mastery alone does not prove Laya learned it. Add the
@@ -435,6 +446,8 @@ stuck.
 |---|---|---|
 | One action at 100%, entropy near 0 | collapse | check option shuffle and the state's rewards; start the state fresh |
 | `explained_variance` near 0 for a long time | the value head cannot predict the reward | make the reward depend on facts in the state text |
+| Advisor learns, Laya stays near uniform | Laya cannot read the facts that matter | turn positions into `Offset` facts and run `python probe.py` |
+| Advisor and Laya both flat, state `stalled` | the reward never pays for progress | add a reward for getting closer to the state's goal |
 | `clip_fraction` above 0.3 or `approx_kl` above 0.05 | updates too large | lower the head learning rate |
 | Probabilities near uniform for a long time | no reward signal | check that the state's rewards change with Laya's moves |
 | Laya ignores the hint in a searching state | exploration reward pulls elsewhere | stop exploration once a route is known |

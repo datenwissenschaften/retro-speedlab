@@ -66,13 +66,17 @@ it first in this run.
 - Check every transition condition against the screen: the RAM value it reads changes exactly when the event
   is visible, in at least two replays or emulator runs.
 - Check that Laya can see what decides its move. `metadata.state_models.<State>` in `/api/snapshot` holds each
-  state's `entropy_share` (1.0 = all moves equally likely) and `explained_variance` (how well it predicts its
-  reward). A state with `entropy_share` above 0.9 and `explained_variance` near 0 after 20 000 decisions is blind:
-  its observation does not say where to go, so no move is better than another. Read that state's observation
-  text (the `state` of `/api/live/statuses`): it must contain, as numbers, the player's position and the
-  direction (`dx`, `dy`) to the state's goal and to the nearest danger, plus whatever else the right move
-  depends on. Measure the missing values in the RAM and add them as facts (skill section 5) before touching
-  rewards; then check that `entropy_share` falls.
+  state's `entropy_share` (1.0 = all moves equally likely), `explained_variance` (how well it predicts its
+  reward) and `stalled`; `metadata.advisors.<State>` holds the same for the fast advisor that practises it. A
+  stalled state, or one with `entropy_share` above 0.9 and `explained_variance` near 0 after 20 000 decisions, is
+  blind: its observation does not say where to go, so no move is better than another. Read that state's
+  observation text (the `state` of `/api/live/statuses`): it must contain the direction to the state's goal and
+  to the nearest danger as `Offset(right, down)` facts, plus whatever else the right move depends on. Measure the
+  missing values in the RAM and add them as facts (skill section 5) before touching rewards. If the advisor
+  learns the state but Laya does not, the facts are there but unreadable for Laya. After changing facts, run
+  `python probe.py` (CPU emulators, GPU for Laya, about 4 minutes): it logs how well Laya reads back every
+  fact from each curriculum seed and fails when an `Offset` falls below R² 0.5. Then check that
+  `entropy_share` falls.
 - Apply the rules of "Break each level into parts": fix wrong transitions and questions first, merge states
   that are not separated by a visible event or only count towards the same goal, split stalled ones. Commit the
   fixes with their tests before new work. When everything checks out, say so with the evidence.

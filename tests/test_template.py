@@ -23,6 +23,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 EXPECTED_FILES = [
     "app.py",
+    "probe.py",
     "config.yaml",
     "pyproject.toml",
     "README.md",
