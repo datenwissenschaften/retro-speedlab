@@ -7,9 +7,9 @@ RUN curl -fsSL https://claude.ai/install.sh | bash && pip install pytest ruff yt
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /app
 COPY pyproject.toml ./
-RUN python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" \
+RUN --mount=type=cache,target=/root/.cache/pip python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" \
         > requirements.txt \
-    && pip install --requirement requirements.txt
+    && env -u PIP_NO_CACHE_DIR pip install --requirement requirements.txt
 COPY . ./
 RUN python -m stable_retro.import roms
 CMD ["python", "app.py"]
