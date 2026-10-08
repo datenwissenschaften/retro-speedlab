@@ -365,8 +365,9 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   trained decisions; switching states swaps the small heads.
 - A fast advisor coaches Laya (`advisor/`): every emulator but the first is played by a small actor-critic per
   state that reads the RAM plus the facts and learns with PPO at emulator speed (`<State>/advisor.pt`). On the
-  first emulator, the one on the stream, Laya decides every move; it reads the advisor's view as the fact
-  `"advisor": "right 82%, jump 10%"` and its heads imitate the advisor's choice. A state where the advisor
+  first emulator, the one on the stream, Laya decides every move; it reads the advisor's top move as the first
+  fact, in that option's own words (`"advised": "hold right"`), and its heads imitate the advisor's choice.
+  `metadata.state_models.<State>.advisor_agreement` is how often Laya's favourite move is the advised one. A state where the advisor
   learns (`metadata.advisors.<State>`: `entropy` falling, `explained_variance` rising) but Laya does not follow
   needs clearer facts; a state where neither learns needs a reward that pays for progress.
 - Every attempt boots the game at power-on with every button, like a real speedrun: the title screen and the
