@@ -367,7 +367,11 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   state that reads the RAM plus the facts and learns with PPO at emulator speed (`<State>/advisor.pt`). On the
   first emulator, the one on the stream, Laya decides every move; it reads the advisor's top move as the first
   fact, in that option's own words (`"advised": "hold right"`), and its heads imitate the advisor's choice.
-  `metadata.state_models.<State>.advisor_agreement` is how often Laya's favourite move is the advised one. A state where the advisor
+  `metadata.state_models.<State>.advisor_agreement` is how often Laya's favourite move is the advised one.
+- Backplay: every demonstration from power-on also gives the advisors start points (one per 4 decisions of
+  each stretch that leaves a state forward). Practice in that state starts near its exit and moves back once
+  half of 20 attempts get out (`metadata.advisors.<State>.backplay`, e.g. `12/36`). A demonstration that
+  reaches past a hard platforming part is the most effective help for it; Laya itself never starts there. A state where the advisor
   learns (`metadata.advisors.<State>`: `entropy` falling, `explained_variance` rising) but Laya does not follow
   needs clearer facts; a state where neither learns needs a reward that pays for progress.
 - Every attempt boots the game at power-on with every button, like a real speedrun: the title screen and the
