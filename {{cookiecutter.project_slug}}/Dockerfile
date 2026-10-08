@@ -9,7 +9,7 @@ WORKDIR /app
 COPY pyproject.toml ./
 RUN --mount=type=cache,target=/root/.cache/pip python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" \
         > requirements.txt \
-    && env -u PIP_NO_CACHE_DIR pip install --requirement requirements.txt
+    && env -u PIP_NO_CACHE_DIR pip install --timeout 120 --retries 10 --requirement requirements.txt
 COPY . ./
 RUN python -m stable_retro.import roms
 CMD ["python", "app.py"]
