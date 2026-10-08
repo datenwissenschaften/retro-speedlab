@@ -224,14 +224,14 @@ Rules:
 - **Prove the markers** on frames from every level you train: draw `state.detections()` with
   `draw_detections`, tile the frames into a contact sheet and look at it for misses and false positives. Pin
   each detector with a test on a real frame from `assets/` or a rendered template.
-- **Check them live after the deploy**: cut a frame from `/api/live/video` with `ffmpeg`, look at the image for the
+- **Check them live after the deploy**: cut a frame from `/live/media/<key>.mp4` with `ffmpeg`, look at the image for the
   boxes, and check that its `status.ram` has the `nearest_*` entries.
 
 ### Pitfalls
 
 - **Replays of `.bk2` recordings can drift** from the live run (curriculum restores, reset timing). Never
   analyse training behaviour from `.bk2` replays; use the live per-frame status
-  (`/api/live/statuses` and `/api/live/video`) or runs started from states you saved.
+  (`/live/media/<key>.json` and `/live/media/<key>.mp4`) or runs started from states you saved.
 - **`scenario.json`'s done condition is ignored** by the engine, because it misfires on the title screen
   (lives read as uninitialized RAM there). The game's states decide game over with `_terminated()`.
 - **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
@@ -421,12 +421,12 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   (for example how often Bell2 practice reaches Door2). Practice emulators save new start points and practise Laya's active state, but
   only Laya's attempts on the first emulator count as curriculum wins, "Too slow" lines, level times, stream
   replays, videos and uploads, so mastery always means Laya mastered it. The stream never shows the advisor.
-- The dashboard's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
+- The live snapshot's `metadata.model.laya` reports `policy_loss`, `value_loss`, `entropy`, `approx_kl`,
   `clip_fraction`, `explained_variance` and `imitation_loss` of the last update.
 - `metadata.state_models.<State>` keeps every state's `num_timesteps`, `entropy_share` (entropy over its
   maximum, 1.0 = uniform), `explained_variance` and `stalled` (true after 200 000 decisions with a smoothed
   `entropy_share` of at least 0.9 and `explained_variance` below 0.1; the log warns "Laya is stalled in" and the
-  dashboard marks the state red). Laya's reader is frozen, so the heads can only learn what
+  stream marks the state red). Laya's reader is frozen, so the heads can only learn what
   the observation text tells them. A state that stays near `entropy_share` 1.0 with `explained_variance` near 0
   is blind: its observation lacks the player's position and the direction to its goal and dangers. Many
   emulators can still master such a state by chance, so mastery alone does not prove Laya learned it. Add the
@@ -441,10 +441,10 @@ Every run starts with the curriculum check of `agent/PROMPT.md` ("Order of work"
 game's objectives, each best replay stops right after the visible event its question names, and every
 transition is verified against the screen. Fix, merge or split before new work.
 
-Read `http://<ui host>/api/snapshot` (`metadata.model.laya`, `metadata.curricula`, `summary`
-with `full_run_episodes` and `full_run_wins`, `server.release`) and `/api/live/episode`,
-`/api/live/statuses?generation=<g>&episode=<id>&start=<n>` (per-frame status with probabilities, action, state
-and observation) and `/api/live/video?generation=<g>&episode=<id>` (the attempt as an H.264 video).
+Read `<upload.url>/live/snapshot?api_key=$STREAM_API_KEY` (`metadata.model.laya`, `metadata.curricula`, `summary`
+with `full_run_episodes` and `full_run_wins`, `server.release`) and `/live/feed`,
+`/live/media/<key>.json` (per-frame status with probabilities, action, state
+and observation) and `/live/media/<key>.mp4` (the attempt as an H.264 video).
 
 Compute per state from the live frames: how often the chosen action equals the hinted `move`, the average
 probability of the hinted move, weight and life changes with the frame they happen on, and time in water or
@@ -470,8 +470,8 @@ stuck.
 
 ## 10. Deploy
 
-- Build an image from the package plus the committed engine (a Dockerfile with a Node stage for the
-  dashboard, `python -m stable_retro.import roms`, `ffmpeg`, and GPU access), for example with Dokku
+- Build an image from the package plus the committed engine (a Dockerfile with
+  `python -m stable_retro.import roms`, `ffmpeg`, and GPU access), for example with Dokku
   (`--gpus=all`, persistent storage for the `working/` directory, wait-to-retire 0 so two containers never
   share the GPU). When training against a local engine checkout, commit it first; never commit `config.yaml`
   with API keys or ROMs.
@@ -498,9 +498,9 @@ check progress, change the code and keep learning. The repositories are mounted 
 (`CLAUDE_CODE_OAUTH_TOKEN`). Every deploy and schedule value comes from `config.yaml`, nothing is set in
 scripts.
 
-1. **Measure.** Read the dashboard (`/api/snapshot`: the run's summary in `summary.by_savestate`,
-   `metadata.curricula`, `metadata.stories`, `metadata.run`), the live attempts (`/api/live/episode`,
-   `/api/live/statuses` and `/api/live/video`), and per level the landmarks, routes and safety map in the training data. Compare with
+1. **Measure.** Read the live snapshot (`/live/snapshot`: the run's summary in `summary.by_savestate`,
+   `metadata.curricula`, `metadata.stories`, `metadata.run`), the live attempts (`/live/feed`,
+   `/live/media/<key>.json` and `/live/media/<key>.mp4`), and per level the landmarks, routes and safety map in the training data. Compare with
    the last reports in `agent/reports/`. Record per level: attempts, full-run wins, the curriculum phase that
    blocks, where attempts end, hint-following rate, the action probabilities, and whether the previous run's
    change moved its metric.

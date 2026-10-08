@@ -12,6 +12,4 @@ RUN python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml
     && pip install --requirement requirements.txt
 COPY . ./
 RUN python -m stable_retro.import roms
-RUN sed -i 's/^  host: 127.0.0.1$/  host: 0.0.0.0/' config.yaml && grep -q '^  host: 0.0.0.0$' config.yaml
-EXPOSE 18080
 CMD ["python", "app.py"]

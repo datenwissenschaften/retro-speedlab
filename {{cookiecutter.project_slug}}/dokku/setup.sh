@@ -24,7 +24,7 @@ dokku storage:mount "${APP}" "${DATA_DIR}/working:/app/working"
 dokku storage:mount "${APP}" "${DATA_DIR}/huggingface:/root/.cache/huggingface"
 dokku storage:mount "${APP}" "${WORKSPACE_DIR}:/workspace"
 ssh "${SERVER_HOST}" cat "${AGENT_KEY}.pub" | ssh -t "${SERVER_HOST}" sudo dokku ssh-keys:add "${APP}-agent"
-dokku ports:set "${APP}" http:80:18080
+dokku proxy:disable "${APP}"
 dokku checks:disable "${APP}"
 dokku checks:set "${APP}" wait-to-retire 0
 echo "Set the agent token once: ssh ${DOKKU_HOST} config:set --no-restart ${APP} CLAUDE_CODE_OAUTH_TOKEN=<token>"

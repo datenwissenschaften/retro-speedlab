@@ -36,9 +36,9 @@ seeds) is built by the lab runs, following
    poetry run python app.py
    ```
 
-The dashboard runs at <http://127.0.0.1:18080>, and
-<http://127.0.0.1:18080/stream> is a 1920×1080 stream view for OBS that replays
-every frame with Laya's decision behind it.
+With `upload.api_key` set, the training relays its live stream to the Retro
+Speedlab backend; the website's `/stream?api_key=<stream key>` page replays every
+frame with Laya's decision behind it, for OBS.
 
 ## Configuration
 
@@ -76,7 +76,7 @@ dokku/deploy.sh
 ```
 
 Each deploy registers the lab run with Dokku's scheduler. Write server
-specifics (training data folder, dashboard address) into `NOTES.md`; the lab
+specifics (training data folder, backend address) into `NOTES.md`; the lab
 runs read them there.
 
 ## Quality checks

@@ -57,20 +57,20 @@ it first in this run.
 "Curriculum check":
 
 - List the states of `GameWrapper.levels` in order with their wins, best win steps and training time
-  (`/api/snapshot`). Does the list read like the game's own objectives for the level, in the order the game
+  (`/live/snapshot`). Does the list read like the game's own objectives for the level, in the order the game
   enforces them, with no gap and nothing twice?
-- For each state, watch its best replay (`/api/live/statuses`, `/api/live/video`; cut frames with `ffmpeg`):
+- For each state, watch its best replay (`/live/media/<key>.json`, `/live/media/<key>.mp4`; cut frames with `ffmpeg`):
   it starts where the previous state ends and stops right after the visible event its question names. A replay
   that plays on past its goal, stops before it, or shows a different goal than the question means a wrong
   transition or a wrong question.
 - Check every transition condition against the screen: the RAM value it reads changes exactly when the event
   is visible, in at least two replays or emulator runs.
-- Check that Laya can see what decides its move. `metadata.state_models.<State>` in `/api/snapshot` holds each
+- Check that Laya can see what decides its move. `metadata.state_models.<State>` in `/live/snapshot` holds each
   state's `entropy_share` (1.0 = all moves equally likely), `explained_variance` (how well it predicts its
   reward) and `stalled`; `metadata.advisors.<State>` holds the same for the fast advisor that practises it. A
   stalled state, or one with `entropy_share` above 0.9 and `explained_variance` near 0 after 20 000 decisions, is
   blind: its observation does not say where to go, so no move is better than another. Read that state's
-  observation text (the `state` of `/api/live/statuses`): it must contain the direction to the state's goal and
+  observation text (the `state` of `/live/media/<key>.json`): it must contain the direction to the state's goal and
   to the nearest danger as `Offset(right, down)` facts, plus whatever else the right move depends on. Measure the
   missing values in the RAM and add them as facts (skill section 5) before touching rewards. If the advisor
   learns the state but Laya does not, the facts are there but unreadable for Laya. After changing facts, run
@@ -123,27 +123,27 @@ the exit, then the next level's parts.
   (skill section 3). Backward transitions cover a lost precondition (an item is lost, so back to collecting it).
 - The engine saves a curriculum checkpoint only when an episode moves from one state to the next, and once a
   state is mastered it starts later episodes from that checkpoint. A level kept as one state never gets
-  checkpoints: the dashboard shows a single state and Laya replays the start of the level forever.
+  checkpoints: the live snapshot shows a single state and Laya replays the start of the level forever.
 - Seed each part that Laya cannot reach yet (section "Like a real speedrun").
 - **Group each level's parts.** `GameWrapper.levels` lists every level with its states in order, e.g.
   `(("Level 1", (Play, Feed, Grow, Scale, Door)),)`. When all states of a level are mastered, the engine trains
   the whole level from its first state until it is beaten (8 wins), measures the level's time, and the stream
   shows the level as one node with its best and last time. **Speed counts:** a win only counts if it takes at
   most 25 % more steps than the median of that state's or level's last 8 wins (`ReverseCurriculum.SPEED_MARGIN`,
-  `win_step_limit` in the dashboard's curriculum metadata, "Too slow for <State>" in the logs). A slow win does
+  `win_step_limit` in the live snapshot's curriculum metadata, "Too slow for <State>" in the logs). A slow win does
   not master a state, faster wins pull the limit down, and one lucky fast win never blocks mastery, so Laya
   learns each part as fast as it can consistently. Rewards should keep a small cost per step so the fastest route also earns the most. Add a level only once it ends in a verified win or
   exit, and add every new state of that level to it.
 - Keep each part small enough that Laya can finish it within one attempt (three real minutes per state).
 - **Split a stalled part.** When a state has trained for six hours (`summary.by_state.<State>.duration_seconds_total`
-  in `/api/snapshot` reaches 21600) and has fewer than half its win target
+  in `/live/snapshot` reaches 21600) and has fewer than half its win target
   (`metadata.savestate_curriculum.<State>.wins` < `win_target / 2`), split it into two states at a verified
   intermediate goal (for example half of what a gate needs before all of it), each with its own question, reward, transition
   test and seed from power-on, and deploy. A part that stalls again is split again.
 - **Every boundary is a visible game event.** A state ends at something a viewer of the stream can see and
   name: an item picked up, the body growing, a gate or door opening, a bell ringing, a new screen or level. Never
   end a state at a threshold of a RAM byte whose meaning is not verified, or at an arbitrary count no one can see
-  on screen. Check the best replay of each state (`/api/live/video`): it must stop right after the event its
+  on screen. Check the best replay of each state (`/live/media/<key>.mp4`): it must stop right after the event its
   question names. If it plays on after the goal visibly happened, or stops before it, the transition is wrong:
   fix it (verify the byte against the screen) before anything else.
 - **Merge parts again.** Splitting is temporary. Merge neighbouring states back into one when their boundary is
@@ -153,7 +153,7 @@ the exit, then the next level's parts.
   `GameWrapper.levels`, the transition tests and the demonstrations' state labels, and deploy. Merging and
   splitting again later is fine; the curriculum should read like the game's own objectives.
 - This comes before more markers, facts or rewards for a level whose route is known. Pin every transition with a
-  test on a real state saved from power-on, and check after the deploy that the dashboard lists the new states.
+  test on a real state saved from power-on, and check after the deploy that the live snapshot lists the new states.
 
 Only then work the walkthrough's other gates from the start of the level toward the end, each in the same
 order: measure it, mark it (boxes and `nearest_*` facts in `describe()`, proven on a contact sheet and pinned
@@ -231,7 +231,7 @@ When no source reaches a part, use the ways below.
 Laya's training pauses while your run is active (the engine waits while `/workspace/.lab-run` holds your
 deadline, and the stream tells viewers the lab is upgrading the game), so there are no new live attempts
 during the run. After the deploy, check that the release starts without errors in the logs and that the
-dashboard lists the new states. Prove rewards, facts and markers by playing the deployed package through the
+live snapshot lists the new states. Prove rewards, facts and markers by playing the deployed package through the
 real wrapper from power-on for a few hundred steps: rewards are non-zero, and the boxes sit on their sprites
 on frames drawn with `draw_detections`. If it breaks, revert, redeploy and say so in the report. The next run
 starts by measuring how the live training did since this one.
@@ -248,8 +248,10 @@ All names and addresses are in the `training`, `paths`, `dokku` and `agent` sect
   (`ram_discover.py`, `ram_locate.py`, `explore.py`; skill section 2); run them with `python`.
 - Training data (read-only, copy to `/tmp` before use): `/app/working` with `database.json`,
   `cache/curriculum/<game>/` (curriculum checkpoints, `landmarks.json`) and `recordings/`.
-- Dashboard API: `http://<dokku.host_address>/api/snapshot`, `/api/live/episode`,
-  `/api/live/statuses?generation=<g>&episode=<id>&start=<n>` and `/api/live/video?generation=<g>&episode=<id>`.
+- Live data, from the backend at `upload.url` in `config.yaml`, every request with `?api_key=$STREAM_API_KEY`:
+  `/live/snapshot`, `/live/feed` (the latest attempt, the best replay of each state and the best attempts, each
+  with a `key`), `/live/media/<key>.json` (per-frame statuses, gzipped: `curl --compressed`) and
+  `/live/media/<key>.mp4` (the attempt as an H.264 video).
 - Dokku: `ssh <dokku.host> logs <dokku.app> --num 500`, `ssh <dokku.host> config:get <dokku.app> RELEASE`.
 - Deploy: `dokku/deploy.sh` (commit the engine first when it changed). Training resumes from its checkpoints.
 - Reports: `agent/reports/<date -u +%F>.md`. Facts you verified, with their evidence, go into `NOTES.md`;
@@ -257,7 +259,7 @@ All names and addresses are in the `training`, `paths`, `dokku` and `agent` sect
 
 ## Rules
 
-Never reset models, delete or edit training data, or call `/api/model/reset`. Never bump the engine version.
+Never reset models, delete or edit training data, or call `/live/reset`. Never bump the engine version.
 Never commit secrets or ROMs. No `sudo`. Every commit passes `ruff check`, `ruff format` and `pytest`.
 
 Always finish with the report `agent/reports/<start time>.md`, named by the run's UTC start time

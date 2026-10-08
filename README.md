@@ -143,7 +143,7 @@ logging, the local UI and the server deployment:
 | `laya` | The Laya checkpoint (Hugging Face Hub ID or local directory) |
 | `log_level` | Standard Python logging level |
 | `upload` | Retro Speedlab API endpoint and key for beaten levels and lab reports (`null` for local-only training) |
-| `ui` | Local telemetry dashboard and stream view host, port, and persona |
+| `ui` | Live stream relay to the backend: episodes kept, release, and persona |
 | `twitch` | Short lab reports on the stream, written by free OpenRouter models |
 | `dokku`, `agent` | GPU server deployment and the schedule of the lab runs |
 
