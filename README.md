@@ -99,7 +99,7 @@ flowchart LR
     WRAP --> RAM[GameRam]
     WRAP --> STATE[Play]
     TRAINER --> LAYA[Laya decision model]
-    TRAINER --> UI[Dashboard + stream view]
+    TRAINER --> UI[Live relay to the backend]
     TRAINER --> API[Retro Speedlab API]
     CORE[Retro Speedlab Core] -.base classes.-> WRAP
     CORE -.-> STATE
