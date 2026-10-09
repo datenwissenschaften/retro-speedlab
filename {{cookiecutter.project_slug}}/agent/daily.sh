@@ -18,6 +18,7 @@ readonly DEADLINE="$(( $(date +%s) + $(setting agent.hours) * 3600 ))"
 readonly LAB_RUN_MARKER="${WORKSPACE_DIR}/.lab-run"
 finish() {
     rm -f "${LAB_RUN_MARKER}"
+    touch "${WORKSPACE_DIR}/.agent-last-run"
     restore_workspace_owner
 }
 trap finish EXIT

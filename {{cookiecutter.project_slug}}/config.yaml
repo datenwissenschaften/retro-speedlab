@@ -43,7 +43,9 @@ dokku:
   host_address: 172.17.0.1
 
 agent:
-  schedule: "30 3,9,15,21 * * *"
+  schedule: "*/15 * * * *"
+  stall_hours: 2
+  runs_per_day: 4
   hours: 4
   model: sonnet
   git_name: {{ cookiecutter.project_name }} daily agent

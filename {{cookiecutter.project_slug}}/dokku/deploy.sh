@@ -26,7 +26,7 @@ git -C "${PROJECT_DIR}" ls-files -z | tar -C "${PROJECT_DIR}" --null -T - -cf - 
 cp "${PROJECT_DIR}/config.yaml" "${build_dir}/config.yaml"
 cp -R "${PROJECT_DIR}/roms/." "${build_dir}/roms/"
 sed -i "s/^  release: .*$/  release: ${release}/" "${build_dir}/config.yaml"
-python3 - "${SCHEDULE}" "/workspace/$(basename "${PROJECT_DIR}")/agent/daily.sh" >"${build_dir}/app.json" <<'PYTHON'
+python3 - "${SCHEDULE}" "/workspace/$(basename "${PROJECT_DIR}")/agent/trigger.sh" >"${build_dir}/app.json" <<'PYTHON'
 import json
 import sys
 

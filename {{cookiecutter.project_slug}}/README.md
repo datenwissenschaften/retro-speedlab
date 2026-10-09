@@ -54,7 +54,7 @@ the Retro Speedlab API under `upload.url`. Never commit a real key.
 ## Lab runs on a GPU server
 
 Training runs around the clock in a [Dokku](https://dokku.com) app on a GPU
-server, and four times a day (`agent.schedule`) Claude Code runs there
+server, and when training has made no progress (no curriculum win) for `agent.stall_hours` hours, at most `agent.runs_per_day` times a day (`agent/trigger.sh`, checked every 15 minutes), Claude Code runs there
 unattended in a one-off container of the same app (`agent/daily.sh`, prompt in
 `agent/PROMPT.md`). Each lab run measures the progress, ships at least one
 verified change to the game package, tests it, commits, deploys and writes a
