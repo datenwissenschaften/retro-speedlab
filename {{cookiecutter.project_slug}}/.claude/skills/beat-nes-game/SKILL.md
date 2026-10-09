@@ -135,6 +135,12 @@ Published knowledge is a hypothesis, not a fact:
   sprite table (0x200–0x2FF) are excluded because games reuse them.
 - **Build a world location** from screen and position bytes (signed high byte × 256 + low byte per axis) and
   check that it is continuous while walking. Hints, routes and exploration all depend on it.
+- **Return it from `GameRam.position()`** as `Position(area, x, y, height, airborne)` from
+  `datenwissenschaften.route.position`: `area` is the level or room, `x` and `y` grow in the same directions as
+  the game's `Offset(right, down)` facts (so `Offset(target.x - x, target.y - y)` reads like them), `height` and
+  `airborne` are the jump height and whether the player is off the ground (0 and `False` in games without
+  jumping). Return `None` outside play (title, bonus stage, death animation, off the map). This one method
+  switches on the engine's route memory (section 8); without it Laya has no idea what to do where.
 - **Write `src/ram/<game>.py`** from verified values only, with a `describe()` that returns what Laya needs
   (lives, timer, progress counters, flags), and pin each field with a test.
 - **Refine a sprite position** with `scripts/ram_locate.py` when the automatic color is shared by other
@@ -235,7 +241,7 @@ Rules:
 - **`scenario.json`'s done condition is ignored** by the engine, because it misfires on the title screen
   (lives read as uninitialized RAM there). The game's states decide game over with `_terminated()`.
 - **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
-- **`RamInfo.location()` is a method** the engine calls every step; override it as a method, never as a
+- **`RamInfo.location()` and `RamInfo.position()` are methods** the engine calls every step; override it as a method, never as a
   property or field. Run the game through the real wrapper for a few hundred steps before deploying, so an
   interface mismatch fails locally and not on the live training.
 
@@ -255,6 +261,11 @@ Derive the states from the gates, not from a template: one state per gate, in th
   power-up, hazards, a few RAM facts. Advice is merged in from `hints.py` (section 5). Give every position
   relative to the player as `Offset(right, down)` from `datenwissenschaften.states.facts`; Laya reads it as
   `"34 right, 12 below"` and recovers the direction far better than from signed `dx`/`dy` numbers.
+- Every state in play reports what moves, every step, even when its goal is somewhere else: the nearest food or
+  power-up and the nearest enemy or hazard as `Offset` facts (`to_pibbley`, `to_enemy`), plus what changes
+  the right move right now (mouth full, digesting, invulnerable, carrying). The route memory knows the ground,
+  not the moment: these facts are what makes Laya wait for an enemy, take a short detour to eat, and pick the
+  route up again. A state without them follows the route into every enemy on it.
 - Split transitions into `_advance()` (the verified forward condition) and `_fallback()` (a lost
   precondition sends the player back, for example losing an item before the gate opened goes back to collecting it).
   `_next()` returns the fallback first. Only forward transitions pay the transition reward; the engine ignores
@@ -374,6 +385,15 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   reaches past a hard platforming part is the most effective help for it; Laya itself never starts there. A state where the advisor
   learns (`metadata.advisors.<State>`: `entropy` falling, `explained_variance` rising) but Laya does not follow
   needs clearer facts; a state where neither learns needs a reward that pays for progress.
+- Route memory (`route/`): with `GameRam.position()` implemented, every emulator keeps the trail of positions
+  and moves of its current state and, when the state is left forward (or the game is won), each 8 px cell of
+  the trail keeps the move of the fastest pass from there to the exit (`<State>/route.json`, shared by all
+  emulators, deleted by a model reset). A respawn (a jump of over 64 px or a new area) starts the trail over,
+  so moves that led to a lost life are not learned. Laya and the advisor then read `"route": "hold right"` on a
+  known cell and `"to_route": "16 left, 4 below"` off the route. Routes are per state: a phase that eats and a
+  phase that climbs over the same ground keep different moves, so a phase boundary is also where the moves
+  change. `metadata.routes` counts the known cells per state. The route is advice like the advisor's: the live
+  facts about enemies and food decide when to leave it.
 - Every attempt boots the game at power-on with every button, like a real speedrun: the title screen and the
   choice of one player are the first state (a `Menu` state), and every level is a later state of the same
   run. There are no configured savestates; never use the bundled stable-retro states (`Level1.state`).
@@ -461,6 +481,9 @@ stuck.
 | Laya ignores the hint in a searching state | exploration reward pulls elsewhere | stop exploration once a route is known |
 | Stuck at the same place until the timeout | straight-line hint into a wall | check the route and the stuck alternation with the scripted player |
 | Stuck in the first corner of a new level | no target known, no hint | check the exploring hint and that stuck directions are marked `blocked` |
+| A state with wins is missing from `metadata.routes` | `GameRam.position()` missing or `None` in play | implement it (section 2) and check it through the real wrapper |
+| Laya leaves a known route where nothing threatens | a `to_route` far off or a wrong cell | check `position()` against the frames: area, height and airborne must match the screen |
+| Laya follows the route into the same enemy | the state has no fact for that enemy | add the enemy as an `Offset` fact in that state (section 3) |
 | Repeated hits at the same place | undetected enemy or hazard | find it in the frames and the safety map, add a template, verify |
 | Weight or health drains steadily | hazard or time effect | reproduce idle and in the hazard, then add it as a fact |
 | Episodes time out in a searching state | target never seen | verify the detector on that screen; check the exploration reward |

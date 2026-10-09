@@ -54,6 +54,12 @@ The live stream must stay novel and engaging, so the shipped change must also be
 The level being trained is the first unbeaten one. When `NOTES.md` has no walkthrough for it yet, research
 it first in this run.
 
+**Route memory before any other new work** (after the curriculum check below). If `GameRam.position()` is not implemented yet (it returns `None`), implementing
+it (skill section 2) is this run's shipped change: verify area, x, y, height and airborne against frames from
+the real wrapper and pin them with a test. Then every state in play needs live facts for what moves (enemies,
+food) next to the route (skill section 3). Once routes exist, `metadata.routes` must list every state with wins;
+read a few frames of `/live/media/<key>.json` to confirm `route` appears on Laya's path.
+
 **Every run starts by double-checking the curriculum**, before any other work, and reports it in a section
 "Curriculum check":
 
@@ -72,7 +78,8 @@ it first in this run.
   stalled state, or one with `entropy_share` above 0.9 and `explained_variance` near 0 after 20 000 decisions, is
   blind: its observation does not say where to go, so no move is better than another. Read that state's
   observation text (the `state` of `/live/media/<key>.json`): it must contain the direction to the state's goal and
-  to the nearest danger as `Offset(right, down)` facts, plus whatever else the right move depends on. Measure the
+  to the nearest danger and the nearest food as `Offset(right, down)` facts, plus whatever else the right move
+  depends on, and `route` or `to_route` from the engine's route memory. Measure the
   missing values in the RAM and add them as facts (skill section 5) before touching rewards. If the advisor
   learns the state but Laya does not, the facts are there but unreadable for Laya. After changing facts, run
   `python probe.py` (CPU emulators, GPU for Laya, about 4 minutes): it logs how well Laya reads back every
