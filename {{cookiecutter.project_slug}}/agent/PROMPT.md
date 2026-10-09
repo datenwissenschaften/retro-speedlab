@@ -60,6 +60,10 @@ the real wrapper and pin them with a test. Then every state in play needs live f
 food) next to the route (skill section 3). Once routes exist, `metadata.routes` must list every state with wins;
 read a few frames of `/live/media/<key>.json` to confirm `route` appears on Laya's path.
 
+**A lost life ends the attempt.** If `GameRam.remaining_lives()` is not implemented yet (it returns `None`), implement
+it in the same run (skill section 2): return the lives left from the verified lives byte and `None` outside play. Check
+it through the real wrapper: one real death must end the episode on that frame, and a long run without a death must not.
+
 **Every run starts by double-checking the curriculum**, before any other work, and reports it in a section
 "Curriculum check":
 

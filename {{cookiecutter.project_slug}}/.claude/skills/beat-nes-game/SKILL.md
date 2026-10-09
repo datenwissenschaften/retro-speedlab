@@ -141,6 +141,12 @@ Published knowledge is a hypothesis, not a fact:
   `airborne` are the jump height and whether the player is off the ground (0 and `False` in games without
   jumping). Return `None` outside play (title, bonus stage, death animation, off the map). This one method
   switches on the engine's route memory (section 8); without it Laya has no idea what to do where.
+- **Return the life count from `GameRam.remaining_lives()`**: the lives the player has left, as the screen shows
+  them (0 when the last one is gone). The engine ends the episode on the frame the count drops, so an attempt
+  stops at the first death and the next one starts from the state's seed. Read it only from verified bytes and
+  return `None` where they are not valid (title, game-over and continue screens). A count that drops without a
+  death (a mirror, a byte reused in a bonus stage) ends good attempts: check it on frames of a real death and
+  of a long run without one.
 - **Write `src/ram/<game>.py`** from verified values only, with a `describe()` that returns what Laya needs
   (lives, timer, progress counters, flags), and pin each field with a test.
 - **Refine a sprite position** with `scripts/ram_locate.py` when the automatic color is shared by other
@@ -241,7 +247,7 @@ Rules:
 - **`scenario.json`'s done condition is ignored** by the engine, because it misfires on the title screen
   (lives read as uninitialized RAM there). The game's states decide game over with `_terminated()`.
 - **Game-over and continue screens** change RAM (lives reset, flags flip). Only trust flags inside play.
-- **`RamInfo.location()` and `RamInfo.position()` are methods** the engine calls every step; override it as a method, never as a
+- **`RamInfo.location()`, `RamInfo.position()` and `RamInfo.remaining_lives()` are methods** the engine calls every step; override them as methods, never as a
   property or field. Run the game through the real wrapper for a few hundred steps before deploying, so an
   interface mismatch fails locally and not on the live training.
 
@@ -385,6 +391,8 @@ cannot go. Build that map from the player's own play, in world coordinates, and 
   reaches past a hard platforming part is the most effective help for it; Laya itself never starts there. A state where the advisor
   learns (`metadata.advisors.<State>`: `entropy` falling, `explained_variance` rising) but Laya does not follow
   needs clearer facts; a state where neither learns needs a reward that pays for progress.
+- Lost lives: with `GameRam.remaining_lives()` implemented, every attempt ends on the frame the count drops and
+  counts as a failure of its state; without it the game plays on until its own `_terminated()`.
 - Route memory (`route/`): with `GameRam.position()` implemented, every emulator keeps the trail of positions
   and moves of its current state and, when the state is left forward (or the game is won), each 8 px cell of
   the trail keeps the move of the fastest pass from there to the exit (`<State>/route.json`, shared by all
@@ -483,6 +491,8 @@ stuck.
 | Stuck in the first corner of a new level | no target known, no hint | check the exploring hint and that stuck directions are marked `blocked` |
 | A state with wins is missing from `metadata.routes` | `GameRam.position()` missing or `None` in play | implement it (section 2) and check it through the real wrapper |
 | Laya leaves a known route where nothing threatens | a `to_route` far off or a wrong cell | check `position()` against the frames: area, height and airborne must match the screen |
+| Attempts play on after a death | `GameRam.remaining_lives()` missing or `None` in play | implement it (section 2) and check one real death through the wrapper |
+| Attempts end with no death on screen | `remaining_lives()` drops without a death | find the true lives byte on frames; return `None` outside play |
 | Laya follows the route into the same enemy | the state has no fact for that enemy | add the enemy as an `Offset` fact in that state (section 3) |
 | Repeated hits at the same place | undetected enemy or hazard | find it in the frames and the safety map, add a template, verify |
 | Weight or health drains steadily | hazard or time effect | reproduce idle and in the hazard, then add it as a fact |
