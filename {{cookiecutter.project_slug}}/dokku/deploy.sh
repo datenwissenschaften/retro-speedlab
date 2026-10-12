@@ -7,6 +7,8 @@ readonly DOKKU_HOST="$(setting dokku.host)"
 readonly APP="$(setting dokku.app)"
 readonly SCHEDULE="$(setting agent.schedule)"
 readonly TODAY="$(date -u +%Y.%m.%d)"
+readonly IMAGE_PYTHON="3.12"
+readonly IMAGE_PLATFORM="manylinux_2_28_x86_64"
 
 if ! git -C "${PROJECT_DIR}" diff --quiet HEAD; then
     echo "Commit your changes before deploying." >&2
@@ -26,6 +28,27 @@ git -C "${PROJECT_DIR}" ls-files -z | tar -C "${PROJECT_DIR}" --null -T - -cf - 
 cp "${PROJECT_DIR}/config.yaml" "${build_dir}/config.yaml"
 cp -R "${PROJECT_DIR}/roms/." "${build_dir}/roms/"
 sed -i "s/^  release: .*$/  release: ${release}/" "${build_dir}/config.yaml"
+python3 - "${PROJECT_DIR}/pyproject.toml" >"${build_dir}/dependencies.txt" <<'PYTHON'
+import sys
+import tomllib
+
+print("\n".join(tomllib.load(open(sys.argv[1], "rb"))["project"]["dependencies"]))
+PYTHON
+python3 -m pip download --quiet --no-deps --only-binary=:all: --python-version "${IMAGE_PYTHON}" \
+    --platform "${IMAGE_PLATFORM}" --dest "${build_dir}/wheels" --requirement "${build_dir}/dependencies.txt"
+python3 - "${build_dir}/wheels" >"${build_dir}/requirements.txt" <<'PYTHON'
+import sys
+import zipfile
+from email.parser import Parser
+from pathlib import Path
+
+for wheel in sorted(Path(sys.argv[1]).glob("*.whl")):
+    with zipfile.ZipFile(wheel) as archive:
+        metadata = next(name for name in archive.namelist() if name.endswith(".dist-info/METADATA"))
+        for key, requirement in Parser().parsestr(archive.read(metadata).decode("utf-8")).items():
+            if key == "Requires-Dist" and "extra ==" not in requirement:
+                print(requirement)
+PYTHON
 python3 - "${SCHEDULE}" "/workspace/$(basename "${PROJECT_DIR}")/agent/trigger.sh" >"${build_dir}/app.json" <<'PYTHON'
 import json
 import sys

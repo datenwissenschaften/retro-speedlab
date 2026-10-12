@@ -6,10 +6,11 @@ RUN apt-get update \
 RUN curl -fsSL https://claude.ai/install.sh | bash && pip install pytest ruff yt-dlp
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /app
-COPY pyproject.toml ./
-RUN --mount=type=cache,target=/root/.cache/pip python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" \
-        > requirements.txt \
-    && env -u PIP_NO_CACHE_DIR pip install --timeout 120 --retries 10 --requirement requirements.txt
+COPY requirements.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip env -u PIP_NO_CACHE_DIR pip install --timeout 120 --retries 10 \
+        --requirement requirements.txt
+COPY wheels/ ./wheels/
+RUN pip install --no-deps wheels/*.whl
 COPY . ./
 RUN python -m stable_retro.import roms
 CMD ["python", "app.py"]
