@@ -12,3 +12,4 @@ class GameWrapper(StateMachineGymWrapper[GameRam]):
     action_table = ACTION_TABLE
     action_descriptions = ACTION_DESCRIPTIONS
     levels = ()
+    curriculum_beats_game = False

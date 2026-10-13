@@ -49,12 +49,9 @@ for wheel in sorted(Path(sys.argv[1]).glob("*.whl")):
             if key == "Requires-Dist" and "extra ==" not in requirement:
                 print(requirement)
 PYTHON
-python3 - "${SCHEDULE}" "/workspace/$(basename "${PROJECT_DIR}")/agent/trigger.sh" >"${build_dir}/app.json" <<'PYTHON'
-import json
-import sys
-
-print(json.dumps({"cron": [{"command": sys.argv[2], "schedule": sys.argv[1]}]}, indent=2))
-PYTHON
+cat >"${build_dir}/app.json" <<JSON
+{"cron": [{"command": "/workspace/$(basename "${PROJECT_DIR}")/agent/trigger.sh", "schedule": "${SCHEDULE}"}]}
+JSON
 
 git -C "${build_dir}" init --quiet --initial-branch=main
 git -C "${build_dir}" add --all --force
