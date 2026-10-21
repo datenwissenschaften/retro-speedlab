@@ -42,6 +42,9 @@ dokku:
   workspace_dir: /srv/{{ cookiecutter.project_slug }}-workspace
   host_address: 172.17.0.1
 
+tracking:
+  url: https://training.datenwissenschaften.com
+  token: null
 agent:
   schedule: "*/15 * * * *"
   stall_hours: 2
