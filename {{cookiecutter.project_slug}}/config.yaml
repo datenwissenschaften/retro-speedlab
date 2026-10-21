@@ -8,7 +8,7 @@ paths:
   reports: agent/reports
   curriculum: curriculum
   demonstrations: agent/demonstrations
-  lab_run: ../.lab-run
+  lab_run: /workspace/.lab-run
 
 training:
   game: {{ cookiecutter.game }}
@@ -45,7 +45,6 @@ dokku:
 agent:
   schedule: "*/15 * * * *"
   stall_hours: 2
-  runs_per_day: 4
   hours: 4
   model: sonnet
   git_name: {{ cookiecutter.project_name }} daily agent

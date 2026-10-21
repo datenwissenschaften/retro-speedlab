@@ -50,7 +50,7 @@ for wheel in sorted(Path(sys.argv[1]).glob("*.whl")):
                 print(requirement)
 PYTHON
 cat >"${build_dir}/app.json" <<JSON
-{"cron": [{"command": "/workspace/$(basename "${PROJECT_DIR}")/agent/trigger.sh", "schedule": "${SCHEDULE}"}]}
+{"cron": [{"command": "flyte run --local /app/app.py lab --config /app/config.yaml --project /workspace/$(basename "${PROJECT_DIR}")", "schedule": "${SCHEDULE}"}]}
 JSON
 
 git -C "${build_dir}" init --quiet --initial-branch=main

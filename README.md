@@ -89,7 +89,8 @@ retro-speedlab-game/
     └── test_play.py
 ```
 
-`app.py` starts `LayaTrainer` with the game wrapper:
+`app.py` runs the [Flyte](https://flyte.org) workflow `training`, one `LayaTrainer` session after another,
+with the game wrapper:
 
 ```mermaid
 flowchart LR
@@ -124,7 +125,7 @@ progress) before anything else.
 ## Lab runs
 
 Training runs around the clock in a [Dokku](https://dokku.com) app on a GPU
-server with at least 6 GB of memory. Claude Code runs when training has made no progress (no curriculum win) for `agent.stall_hours` hours, at most `agent.runs_per_day` times a day (`agent/trigger.sh`, checked every 15 minutes), unattended in a one-off container of the same app. Each lab run works
+server with at least 6 GB of memory. Claude Code runs when training has made no progress (no curriculum win) for `agent.stall_hours` hours (the Flyte task `lab`, checked every 15 minutes), unattended in a one-off container of the same app. Each lab run works
 toward the next step of the level's walkthrough: it measures the progress,
 verifies RAM and objects in the emulator, ships at least one tested change to
 the game package, deploys it and writes a lab report. The permissions in
