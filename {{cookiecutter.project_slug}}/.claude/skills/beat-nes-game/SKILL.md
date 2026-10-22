@@ -279,8 +279,11 @@ Derive the states from the gates, not from a template: one state per gate, in th
 - `_won()` only in the final state, on the verified win flag.
 - `_terminated()` only on game over. Lost lives and hits cost reward but the attempt continues from the
   respawn, so later parts of the level are practised instead of restarting from the beginning.
-- The engine ends an attempt after three real minutes in one state; `_truncated()` only for an earlier,
-  game-specific end.
+- The engine ends an attempt after three real minutes in one state, and sooner when it stalls: 30 seconds
+  of game time without reaching a new 8 px spot of the state (`GameRam.position()` must be set in play, frames
+  with `None` never stall). `_truncated()` only for an earlier, game-specific end; a state whose goal needs
+  waiting longer than 30 seconds in place must make that wait visible as progress (a new position) or it ends
+  every attempt as stalled.
 - The final state must not treat what the exit does to the player as damage (an exit may drain a resource
   to zero).
 
@@ -487,7 +490,8 @@ stuck.
 | `clip_fraction` above 0.3 or `approx_kl` above 0.05 | updates too large | lower the head learning rate |
 | Probabilities near uniform for a long time | no reward signal | check that the state's rewards change with Laya's moves |
 | Laya ignores the hint in a searching state | exploration reward pulls elsewhere | stop exploration once a route is known |
-| Stuck at the same place until the timeout | straight-line hint into a wall | check the route and the stuck alternation with the scripted player |
+| Attempts end stalled at the same place | straight-line hint into a wall | check the route and the stuck alternation with the scripted player |
+| Attempts end stalled while the player waits on purpose | the state's goal needs a long wait in place | shorten the wait through the hint or split the waiting into its own state |
 | Stuck in the first corner of a new level | no target known, no hint | check the exploring hint and that stuck directions are marked `blocked` |
 | A state with wins is missing from `metadata.routes` | `GameRam.position()` missing or `None` in play | implement it (section 2) and check it through the real wrapper |
 | Laya leaves a known route where nothing threatens | a `to_route` far off or a wrong cell | check `position()` against the frames: area, height and airborne must match the screen |
