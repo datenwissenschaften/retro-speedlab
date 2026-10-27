@@ -1,7 +1,7 @@
 You are a scheduled run of a Retro Speedlab project: an AI learns to play the NES game named in
 `training.game` of `config.yaml`, one level after another, then speedruns them. You run unattended in a
-one-off container of the training app, started because training made no progress for `agent.stall_hours`
-hours, with `agent.hours` hours of time.
+one-off container of the training app, started because training made no progress for `agent.stall_minutes`
+minutes, with `agent.hours` hours of time.
 Follow `.claude/skills/beat-nes-game/SKILL.md` (section 11 for the scheduled loop, sections 2 to 9 for how to
 investigate and fix) and `../retro-speedlab-core/AGENTS.md` for code style.
 
@@ -139,17 +139,15 @@ the exit, then the next level's parts.
 - Seed each part that Laya cannot reach yet (section "Like a real speedrun").
 - **Group each level's parts.** `GameWrapper.levels` lists every level with its states in order, e.g.
   `(("Level 1", (Play, Feed, Grow, Scale, Door)),)`. When all states of a level are mastered, the engine trains
-  the whole level from its first state until it is beaten (8 wins), measures the level's time, and the stream
-  shows the level as one node with its best and last time. **Speed counts:** a win only counts if it takes at
-  most 25 % more steps than the median of that state's or level's last 8 wins (`ReverseCurriculum.SPEED_MARGIN`,
-  `win_step_limit` in the live snapshot's curriculum metadata, "Too slow for <State>" in the logs). A slow win does
-  not master a state, faster wins pull the limit down, and one lucky fast win never blocks mastery, so Laya
-  learns each part as fast as it can consistently. Rewards should keep a small cost per step so the fastest route also earns the most. Add a level only once it ends in a verified win or
+  the whole level from its first state until it is beaten once, measures the level's time, and the stream
+  shows the level as one node with its time. **The first win masters:** the first win of a state or level
+  masters it, and training never goes back to a mastered state or level, so every attempt pushes into new
+  ground. Getting faster comes later, once the whole game is beaten. Rewards should keep a small cost per step so the fastest route also earns the most. Add a level only once it ends in a verified win or
   exit, and add every new state of that level to it.
 - Keep each part small enough that Laya can finish it within one attempt (three real minutes per state).
 - **Split a stalled part.** When a state has trained for six hours (`summary.by_state.<State>.duration_seconds_total`
-  in `/live/snapshot` reaches 21600) and has fewer than half its win target
-  (`metadata.savestate_curriculum.<State>.wins` < `win_target / 2`), split it into two states at a verified
+  in `/live/snapshot` reaches 21600) and has not won yet
+  (`metadata.savestate_curriculum.<State>.mastered` is false), split it into two states at a verified
   intermediate goal (for example half of what a gate needs before all of it), each with its own question, reward, transition
   test and seed from power-on, and deploy. A part that stalls again is split again.
 - **Every boundary is a visible game event.** A state ends at something a viewer of the stream can see and

@@ -47,7 +47,7 @@ tracking:
   token: null
 agent:
   schedule: "*/15 * * * *"
-  stall_hours: 2
+  stall_minutes: 30
   hours: 4
   model: sonnet
   git_name: {{ cookiecutter.project_name }} daily agent
