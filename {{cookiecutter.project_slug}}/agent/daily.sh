@@ -115,6 +115,7 @@ ship() {
     mkdir -p "${HOME}/.ssh"
     printf 'Host %s\n  HostName %s\n  User dokku\n  IdentityFile %s\n  IdentitiesOnly yes\n  StrictHostKeyChecking accept-new\n' \
         "${DOKKU_HOST}" "${HOST_ADDRESS}" "${AGENT_KEY}" >"${HOME}/.ssh/config"
+    git -C "${WORKSPACE_DIR}/retro-speedlab-core" pull --ff-only --quiet origin main
     bash "${PROJECT_DIR}/dokku/deploy.sh"
 }
 
