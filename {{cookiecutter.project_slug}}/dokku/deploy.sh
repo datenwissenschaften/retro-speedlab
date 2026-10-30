@@ -6,12 +6,24 @@ source "${PROJECT_DIR}/dokku/settings.sh"
 readonly DOKKU_HOST="$(setting dokku.host)"
 readonly APP="$(setting dokku.app)"
 readonly SCHEDULE="$(setting agent.schedule)"
+readonly CORE_DIR="$(cd "${PROJECT_DIR}/../retro-speedlab-core" && pwd)"
+readonly CONFIG_PATH="${PROJECT_DIR}/config.yaml"
+readonly GAME="$(setting training.game)"
+readonly ROM_PATH="${PROJECT_DIR}/roms/${GAME}.nes"
 readonly TODAY="$(date -u +%Y.%m.%d)"
-readonly IMAGE_PYTHON="3.12"
-readonly IMAGE_PLATFORM="manylinux_2_28_x86_64"
 
-if ! git -C "${PROJECT_DIR}" diff --quiet HEAD; then
-    echo "Commit your changes before deploying." >&2
+if ! git -C "${CORE_DIR}" diff --quiet HEAD; then
+    echo "retro-speedlab-core has uncommitted changes; commit them before deploying." >&2
+    exit 1
+fi
+
+if [[ ! -f "${CONFIG_PATH}" ]]; then
+    echo "Missing deployment configuration: ${CONFIG_PATH}" >&2
+    exit 1
+fi
+
+if [[ ! -f "${ROM_PATH}" ]]; then
+    echo "Missing deployment ROM: ${ROM_PATH}" >&2
     exit 1
 fi
 
@@ -24,38 +36,28 @@ fi
 
 build_dir="$(mktemp -d)"
 trap 'rm -rf "${build_dir}"' EXIT
-git -C "${PROJECT_DIR}" ls-files -z | tar -C "${PROJECT_DIR}" --null -T - -cf - | tar -x -C "${build_dir}"
-cp "${PROJECT_DIR}/config.yaml" "${build_dir}/config.yaml"
-cp -R "${PROJECT_DIR}/roms/." "${build_dir}/roms/"
-sed -i "s/^  release: .*$/  release: ${release}/" "${build_dir}/config.yaml"
-python3 - "${PROJECT_DIR}/pyproject.toml" >"${build_dir}/dependencies.txt" <<'PYTHON'
-import sys
-import tomllib
+mkdir -p "${build_dir}/core" "${build_dir}/app"
 
-print("\n".join(tomllib.load(open(sys.argv[1], "rb"))["project"]["dependencies"]))
-PYTHON
-python3 -m pip download --quiet --no-deps --only-binary=:all: --python-version "${IMAGE_PYTHON}" \
-    --platform "${IMAGE_PLATFORM}" --dest "${build_dir}/wheels" --requirement "${build_dir}/dependencies.txt"
-python3 - "${build_dir}/wheels" >"${build_dir}/requirements.txt" <<'PYTHON'
+git -C "${CORE_DIR}" archive HEAD | tar -x -C "${build_dir}/core"
+tar -C "${PROJECT_DIR}" \
+    --exclude=.git --exclude=.venv --exclude=working --exclude=models --exclude=dokku --exclude=Dockerfile \
+    --exclude=.idea --exclude=.pytest_cache --exclude=.ruff_cache --exclude=__pycache__ \
+    -cf - . | tar -x -C "${build_dir}/app"
+cp "${PROJECT_DIR}/Dockerfile" "${build_dir}/Dockerfile"
+readonly LAB_COMMAND="flyte run --local /app/app.py lab --config /app/config.yaml --project /workspace/$(basename "${PROJECT_DIR}")"
+python3 - "${SCHEDULE}" "${LAB_COMMAND}" >"${build_dir}/app.json" <<'PYTHON'
+import json
 import sys
-import zipfile
-from email.parser import Parser
-from pathlib import Path
 
-for wheel in sorted(Path(sys.argv[1]).glob("*.whl")):
-    with zipfile.ZipFile(wheel) as archive:
-        metadata = next(name for name in archive.namelist() if name.endswith(".dist-info/METADATA"))
-        for key, requirement in Parser().parsestr(archive.read(metadata).decode("utf-8")).items():
-            if key == "Requires-Dist" and "extra ==" not in requirement:
-                print(requirement)
+print(json.dumps({"cron": [{"command": sys.argv[2], "schedule": sys.argv[1]}]}, indent=2))
 PYTHON
-cat >"${build_dir}/app.json" <<JSON
-{"cron": [{"command": "flyte run --local /app/app.py lab --config /app/config.yaml --project /workspace/$(basename "${PROJECT_DIR}")", "schedule": "${SCHEDULE}"}]}
-JSON
+sed -i "s/^  release: .*$/  release: ${release}/" "${build_dir}/app/config.yaml"
+grep -q "^  release: ${release}$" "${build_dir}/app/config.yaml"
 
 git -C "${build_dir}" init --quiet --initial-branch=main
 git -C "${build_dir}" add --all --force
-git -C "${build_dir}" commit --quiet --message "Deploy ${APP} ${release}"
-git -C "${build_dir}" push --force "${DOKKU_HOST}:${APP}" main
+git -C "${build_dir}" add --force app/config.yaml "app/roms/${GAME}.nes"
+git -C "${build_dir}" commit --quiet --message "Deploy ${APP} ${release} with retro-speedlab-core $(git -C "${CORE_DIR}" rev-parse --short HEAD)"
+GIT_SSH_COMMAND="ssh -o ServerAliveInterval=30" git -C "${build_dir}" push --force "${DOKKU_HOST}:${APP}" main
 ssh "${DOKKU_HOST}" config:set --no-restart "${APP}" RELEASE="${release}"
-echo "Deployed ${APP} as ${release}"
+echo "Deployed ${APP} ${release}"

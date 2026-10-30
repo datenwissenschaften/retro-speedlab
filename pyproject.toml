@@ -1,7 +1,7 @@
 [project]
 name = "retro-speedlab"
 version = "0.1.0"
-description = "Cookiecutter template that scaffolds reproducible Stable Retro reinforcement-learning projects built on the Retro Speedlab training library."
+description = "Cookiecutter template that scaffolds Retro Speedlab game packages for the engine's frame-exact speedrun search."
 readme = "README.md"
 license = "GPL-3.0-only"
 requires-python = ">=3.12"

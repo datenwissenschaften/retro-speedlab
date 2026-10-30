@@ -2,13 +2,12 @@
 
 [![CI](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml/badge.svg)](https://github.com/datenwissenschaften/retro-speedlab/actions/workflows/ci.yml) ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg) [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 
-A Cookiecutter template that scaffolds a game package for
-[Retro Speedlab](https://www.retrospeedlab.com), the lab where the Laya decision
-model learns to beat retro games by itself. The generated package starts as a
-skeleton that knows nothing about its game. Scheduled Claude Code lab runs grow
-it from what they verify in the emulator, and the
-[Retro Speedlab Core](https://github.com/datenwissenschaften/retro-speedlab-core)
-engine turns it into a learning agent.
+A Cookiecutter template that scaffolds a game package for [Retro Speedlab](https://www.retrospeedlab.com), the lab
+that searches the fastest run of a retro game frame by frame from power-on. The
+[Retro Speedlab Core](https://github.com/datenwissenschaften/retro-speedlab-core) engine runs a Go-Explore TAS search
+on savestates: it beats each level on its own from a savestate at its start (`levels.msgpack`), then builds the full
+run from power-on. The game package tells it what the game is: the RAM map, the actions, and the states of one run,
+grouped into levels. Scheduled Claude Code lab runs grow the package whenever the search is stuck or stalls.
 
 ## What it generates
 
@@ -17,153 +16,85 @@ flowchart TD
     CC[Cookiecutter] --> GEN[Game package skeleton]
     GEN --> A[Plain NES buttons]
     GEN --> B[Empty GameRam]
-    GEN --> C[One Play state, no reward]
-    GEN --> D[Configuration + tests]
-    GEN --> E[Daily lab run + beat-nes-game skill]
+    GEN --> C[One Play state, no reward, no levels]
+    GEN --> D[config.example.yaml + tests]
+    GEN --> E[Lab: lead, subagents, critic, beat-nes-game skill]
     GEN --> F[Dockerfile + Dokku deployment]
     E -. grows .-> B
     E -. grows .-> C
 ```
 
-The template deliberately ships no game knowledge. Everything a game needs
-(RAM map, phases, detectors, hints, rewards, savestates for new levels) is
-built by the lab runs, which follow the bundled
-`.claude/skills/beat-nes-game/SKILL.md`.
+The template ships no game knowledge, no notes, no lab reports and no lessons. Everything a game needs (RAM map,
+`position()`, `remaining_lives()`, `dynamics()`, states, rewards, levels) is built by the lab runs, which follow the
+bundled `.claude/skills/beat-nes-game/SKILL.md`.
 
 ## Quick start
 
 ```bash
 pipx install cookiecutter
 cookiecutter https://github.com/datenwissenschaften/retro-speedlab
+git clone https://github.com/datenwissenschaften/retro-speedlab-core
 cd retro-speedlab-game
+cp config.example.yaml config.yaml
 poetry install
 poetry run python app.py
 ```
 
-Put the ROM Stable Retro expects for the chosen game into `roms/` first; it is
-imported automatically when training starts.
+The engine is a sibling checkout (`../retro-speedlab-core`, a Poetry path dependency); `dokku/deploy.sh` builds the
+image from it. Fill in the `speedrun` section of `config.yaml` and put the ROM you own as `roms/<game>.nes` first.
 
 ### Template variables
 
 | Variable | Purpose |
 | --- | --- |
 | `project_name` | Human-readable project name |
-| `project_slug` | Distribution and directory name, derived from `project_name` |
-| `game` | Stable Retro game id, for example `SnakeRattleNRoll-Nes-v0` |
+| `project_slug` | Distribution, directory, Dokku app and `speedrun.id`, derived from `project_name` |
+| `game` | Stable Retro game id, for example `SuperMarioBros-Nes-v0` |
+| `game_title` | Title shown on the stream, derived from `game` |
 | `author_name` | Package author |
-| `author_email` | Package author email, also used as the lab run's git identity |
-
-Pressing enter at every prompt accepts the defaults, equivalent to
-`cookiecutter ... --no-input`.
+| `author_email` | Package author email, also the lab run's git identity |
 
 ## Generated project structure
 
 ```text
 retro-speedlab-game/
 ├── .claude/
+│   ├── agents/              scout, researcher, engineer, verifier
 │   ├── settings.json
 │   └── skills/beat-nes-game/
 ├── agent/
-│   ├── daily.sh
-│   ├── PROMPT.md
+│   ├── daily.sh             one lab run on its own git worktree
+│   ├── PROMPT.md            the lead's prompt
+│   ├── verify.sh            ruff, pytest and the level routes' replay
+│   ├── work_in_progress.sh
+│   ├── critic.sh            lessons from the last five reports
+│   ├── CRITIC.md
+│   ├── lessons.py
 │   └── reports/
-├── dokku/
-│   ├── deploy.sh
-│   ├── settings.sh
-│   └── setup.sh
-├── app.py
-├── config.yaml
+├── dokku/                   setup.sh, deploy.sh, settings.sh
+├── app.py                   Flyte workflows: speedrun (default) and lab
+├── config.example.yaml
 ├── Dockerfile
 ├── pyproject.toml
+├── integrations/
 ├── roms/
-├── savestates/
 ├── src/
-│   ├── game/
-│   │   ├── actions.py
-│   │   └── wrapper.py
-│   ├── ram/
-│   │   └── game.py
-│   └── states/
-│       └── play.py
+│   ├── game/actions.py, wrapper.py
+│   ├── ram/game.py
+│   └── states/play.py
 └── tests/
-    └── test_play.py
 ```
-
-`app.py` runs the [Flyte](https://flyte.org) workflow `training`, one `LayaTrainer` session after another,
-with the game wrapper:
-
-```mermaid
-flowchart LR
-    CFG[config.yaml] --> APP[app.py]
-    APP --> TRAINER[LayaTrainer]
-    TRAINER --> WRAP[GameWrapper]
-    WRAP --> RAM[GameRam]
-    WRAP --> STATE[Play]
-    TRAINER --> LAYA[Laya decision model]
-    TRAINER --> UI[Live relay to the backend]
-    TRAINER --> API[Retro Speedlab API]
-    CORE[Retro Speedlab Core] -.base classes.-> WRAP
-    CORE -.-> STATE
-    CORE -.-> TRAINER
-```
-
-## The skeleton
-
-- `src/game/actions.py` offers the plain NES buttons: held directions and
-  tapped `A`/`B`, each a four-frame button sequence with a description Laya
-  chooses between.
-- `src/ram/game.py` declares an empty `GameRam`, so Laya is told nothing about
-  the game yet.
-- `src/states/play.py` is a single `Play` state that asks "Which move?", pays no
-  reward and ends an attempt after 18,000 frames.
-- `tests/test_play.py` pins down that the skeleton knows nothing yet.
-
-A constant reward means Laya picks every action with equal probability, so the
-first lab runs ship a learning signal from verified RAM (lives, score,
-progress) before anything else.
 
 ## Lab runs
 
-Training runs around the clock in a [Dokku](https://dokku.com) app on a GPU
-server with at least 6 GB of memory. Claude Code runs when training has made no progress (no curriculum win) for `agent.stall_minutes` minutes (the Flyte task `lab`, checked every 15 minutes), unattended in a one-off container of the same app. Each lab run works
-toward the next step of the level's walkthrough: it measures the progress,
-verifies RAM and objects in the emulator, ships at least one tested change to
-the game package, deploys it and writes a lab report. The permissions in
-`.claude/settings.json` forbid `sudo`, pushing and editing the training data.
+The search runs around the clock in a [Dokku](https://dokku.com) app. Every `agent.schedule` the Flyte task `lab`
+starts a lab run when the search is stuck in a segment or the movie made no progress for `agent.stall_minutes`
+minutes. The lead gets `agent.minutes` minutes on branch `lab/<start>/claude` and delegates to its subagents; the
+branch is merged and deployed only when it has commits and `agent/verify.sh` passes, so every level route still
+replays. Unverified work gets one extension of `agent.extension_minutes`. After five new reports the critic writes
+at most five lessons to `agent/LESSONS.md`, which every lead reads first.
 
-## Configuration
-
-`config.yaml` is the single source for the game, its levels, paths, uploads,
-logging, the local UI and the server deployment:
-
-| Section | Purpose |
-| --- | --- |
-| `paths` | ROM, savestate, model, recording, cache, and lab report directories, and the JSON training database, relative to the project |
-| `training` | Game ID, levels in training order, speedrun turn length, and fingerprint |
-| `laya` | The Laya checkpoint (Hugging Face Hub ID or local directory) |
-| `log_level` | Standard Python logging level |
-| `upload` | Retro Speedlab API endpoint and key for beaten levels and lab reports (`null` for local-only training) |
-| `ui` | Live stream relay to the backend: episodes kept, release, and persona |
-| `twitch` | Short lab reports on the stream, written by free OpenRouter models |
-| `dokku`, `agent` | GPU server deployment and the schedule of the lab runs |
-
-All paths are relative to the project directory, so a generated project can be
-moved without editing machine-specific values. Do not commit a real
-`upload.api_key`.
-
-## Reproducibility
-
-- The generated project pins `datenwissenschaften` (Retro Speedlab Core) to its
-  major version, and the engine pins every dependency it requires to an exact
-  version.
-- Generated projects target Python 3.12 (`py312`), the only version the engine
-  supports.
-- `.pre-commit-config.yaml` pins every hook to an immutable tag.
-- CI (`.github/workflows/ci.yml`) generates a real project from this template on
-  every push and pull request, installs it, runs its lint, format, and test
-  checks, and smoke-tests `app.py` by importing it without an emulator ROM.
-
-To test the template itself:
+## Testing the template
 
 ```bash
 poetry install
@@ -172,31 +103,16 @@ poetry run ruff format --config pyproject.toml --check .
 poetry run pytest tests/
 ```
 
-The `--config pyproject.toml` flag keeps Ruff from reading the generated
-project's own `pyproject.toml`, which is not valid TOML until it is rendered.
+The tests bake real projects and inspect them. CI (`.github/workflows/ci.yml`) additionally bakes a project next to a
+checkout of the engine, installs it, and runs its ruff checks, its tests and an import of `app.py`. The
+`--config pyproject.toml` flag keeps Ruff from reading the generated project's own `pyproject.toml`, which is not
+valid TOML until it is rendered.
 
 ## ROM and licensing notes
 
-- This repository and template never bundle ROMs, copyrighted game assets,
-  savestates you cannot legally redistribute, or credentials. `roms/` only
-  ships a `.gitkeep` placeholder.
-- `.gitignore` in the generated project excludes ROMs, `working/` training
-  output, `*.bk2` recordings, and `.env` files. `config.yaml` is committed, so
-  keep `upload.api_key` at `null` there.
-- You are responsible for only using ROMs you have the legal right to use.
-
-## Relationship to Retro Speedlab
-
-- **`retro-speedlab`** (this repository) generates game package skeletons.
-- **[`retro-speedlab-core`](https://github.com/datenwissenschaften/retro-speedlab-core)**
-  (published as `datenwissenschaften`) is the engine: Laya decisions,
-  reward-driven fine-tuning, per-state checkpoints, curriculum, recording,
-  uploads, and telemetry.
-- **[retrospeedlab.com](https://www.retrospeedlab.com)** is the lab's website:
-  the live stream, the levels Laya has beaten, and the short lab reports.
-
-A generated project depends on the engine and contains only game knowledge;
-everything reusable across games is imported, not copied.
+This repository never bundles ROMs, copyrighted game assets or credentials. The generated `.gitignore` excludes ROMs,
+`working/` output, `*.bk2` movies and `config.yaml`, which holds the keys; only `config.example.yaml` is committed.
+You are responsible for only using ROMs you have the legal right to use.
 
 ## License
 

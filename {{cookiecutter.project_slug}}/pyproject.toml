@@ -1,32 +1,28 @@
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core==2.4.1"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "{{ cookiecutter.project_slug }}"
 version = "0.1.0"
-description = "Laya learns to beat {{ cookiecutter.game }} by itself."
+description = "The fastest run of {{ cookiecutter.game }}, searched frame by frame from power-on."
 readme = "README.md"
 authors = [
     { name = "{{ cookiecutter.author_name }}", email = "{{ cookiecutter.author_email }}" }
 ]
 license = "GPL-3.0-only"
 requires-python = ">=3.12,<3.13"
-dependencies = [
-    "datenwissenschaften>=3.0.13,<4.0.0",
-]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-]
+dynamic = ["dependencies"]
 
-[dependency-groups]
-dev = [
-    "pytest>=8.0.0,<9.0.0",
-    "ruff>=0.14.13",
-]
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+datenwissenschaften = { path = "../retro-speedlab-core", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+ruff = "*"
 
 [tool.ruff]
 line-length = 120
@@ -37,6 +33,3 @@ select = ["E", "F", "I"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-
-[tool.poetry]
-package-mode = false

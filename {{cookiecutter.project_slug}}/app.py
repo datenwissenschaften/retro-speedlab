@@ -1,17 +1,17 @@
 from pathlib import Path
 
 from datenwissenschaften.workflow.lab import lab
-from datenwissenschaften.workflow.launch import run_training
-from datenwissenschaften.workflow.training import training
+from datenwissenschaften.workflow.launch import launch
+from datenwissenschaften.workflow.speedrun import speedrun
 
 CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 WRAPPER = "src.game.wrapper:GameWrapper"
 
-__all__ = ["lab", "training"]
+__all__ = ["lab", "speedrun"]
 
 
 def main() -> None:
-    run_training(WRAPPER, CONFIG_PATH)
+    launch(speedrun, WRAPPER, CONFIG_PATH)
 
 
 if __name__ == "__main__":

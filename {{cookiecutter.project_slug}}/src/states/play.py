@@ -4,4 +4,4 @@ from src.ram.game import GameRam
 
 
 class Play(State[GameRam]):
-    description = "Which move?"
+    goal = "Beat the game"

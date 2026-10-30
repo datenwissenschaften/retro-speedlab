@@ -4,9 +4,9 @@
     "deny": [
       "Bash(sudo:*)",
       "Bash(git push:*)",
-      "Bash(rm -rf /mnt:*)",
-      "Edit(/mnt/**)",
-      "Write(/mnt/**)"
+      "Bash(rm -rf /app:*)",
+      "Edit(/app/working/**)",
+      "Write(/app/working/**)"
     ]
   }
 }

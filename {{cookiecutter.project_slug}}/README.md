@@ -1,91 +1,72 @@
 # {{ cookiecutter.project_name }}
 
-Laya learns to beat `{{ cookiecutter.game }}` by itself in the
-[Retro Speedlab](https://www.retrospeedlab.com). This game package starts as a
-skeleton that knows nothing about the game; scheduled Claude Code lab runs grow
-it from what they verify in the emulator, and the
-[Retro Speedlab Core](https://github.com/datenwissenschaften/retro-speedlab-core)
-engine turns it into a learning agent.
+The fastest run of {{ cookiecutter.game_title }} (`{{ cookiecutter.game }}`), searched frame by frame from power-on
+by the [Retro Speedlab Core](https://github.com/datenwissenschaften/retro-speedlab-core) engine's speedrun search.
+The search runs around the clock on the server as a Dokku app. When it is stuck in a segment, or the movie has not
+improved for `agent.stall_minutes` minutes (the Flyte task `lab`, checked every `agent.schedule`), Claude Code works
+on this package in a one-off container of that app (`agent/daily.sh`, prompt in `agent/PROMPT.md`): it measures,
+changes the game package in `src/`, tests and commits it, and its branch ships only when the current movie still
+replays. It follows the skill in `.claude/skills/beat-nes-game/SKILL.md` and writes a report per run into
+`agent/reports/`. Every five reports, the critic (`agent/critic.sh`, `agent/CRITIC.md`) distils lessons into
+`agent/LESSONS.md`.
 
-## The skeleton
+The game package holds only game knowledge: the verified RAM map (`src/ram/game.py`), the actions
+(`src/game/actions.py`), and the states of one run from power-on (`src/states/`), each with its goal, transitions
+and rewards, grouped into levels in `src/game/wrapper.py`. The search beats each level on its own from a savestate
+at its start (`working/cache/tas/levels.msgpack`), then builds the full run from power-on. It splits the movie at the
+states' transitions.
 
-- `src/game/actions.py`: the plain NES buttons, held directions and tapped
-  `A`/`B`, as four-frame button sequences
-- `src/ram/game.py`: an empty `GameRam`, so Laya is told nothing yet
-- `src/states/play.py`: one `Play` state with the question "Which move?", no
-  reward, and attempts limited to 18,000 frames
-- `src/game/wrapper.py`: the `StateMachineGymWrapper` that wires them together
-- `tests/test_play.py`: pins down that the skeleton knows nothing yet
-
-Every attempt boots the game at power-on, like a real speedrun. Everything else
-(RAM map, the menu and level phases, detectors, hints, rewards and curriculum
-seeds) is built by the lab runs, following
-`.claude/skills/beat-nes-game/SKILL.md`.
+This package starts as a skeleton that knows nothing about the game: the plain NES buttons, an empty `GameRam` and
+one `Play` state without reward. The lab runs grow it from what they verify in the emulator.
 
 ## Quick start
 
-1. Put the ROM Stable Retro expects for `{{ cookiecutter.game }}` into
-   `roms/`. It is imported automatically when training starts; never commit
-   it.
-2. Use a GPU with at least 6 GB of memory. The first start downloads the Laya
-   checkpoint configured under `laya.checkpoint`.
-3. Install and train:
+The engine is a sibling checkout: clone
+[retro-speedlab-core](https://github.com/datenwissenschaften/retro-speedlab-core) next to this project as
+`../retro-speedlab-core`.
 
-   ```bash
-   poetry install
-   poetry run python app.py
-   ```
+Copy `config.example.yaml` to `config.yaml`, fill in the `speedrun` section (speedrun.com and TASVideos ids of the
+game and category) and set `upload.api_key` to relay the stream. `config.yaml` is ignored by git; never commit it.
 
-With `upload.api_key` set, the training relays its live stream to the Retro
-Speedlab backend; the website's `/stream?api_key=<stream key>` page replays every
-frame with Laya's decision behind it, for OBS.
+Put the ROM you own as `roms/{{ cookiecutter.game }}.nes` into `roms/`; never commit it. A game Stable Retro does not
+integrate gets its integration in `integrations/{{ cookiecutter.game }}/`. Then run:
 
-## Configuration
+    poetry install
+    poetry run python app.py
 
-`config.yaml` holds the game, the levels in training order, the Laya
-checkpoint, output directories, the JSON training database, lab reports,
-uploads, the local UI and the server deployment. All paths are relative to the
-project directory.
+Check that a movie still replays with the package:
 
-Keep `upload.api_key` set to `null` for local-only training. With a key, every
-level Laya beats from its first frame and every short lab report is uploaded to
-the Retro Speedlab API under `upload.url`. Never commit a real key.
+    PYTHONPATH=. python -m datenwissenschaften.tas.run verify src.game.wrapper:GameWrapper config.yaml <progress.msgpack>
 
-## Lab runs on a GPU server
+With `upload.api_key` set, the search relays its live stream to the backend at `upload.url`; the website plays it at
+`https://www.retrospeedlab.com/stream?api_key=<stream key>`.
 
-Training runs around the clock in a [Dokku](https://dokku.com) app on a GPU
-server, and when training has made no progress (no curriculum win) for `agent.stall_minutes` minutes (the Flyte task `lab`, checked every 15 minutes), Claude Code runs there
-unattended in a one-off container of the same app (`agent/daily.sh`, prompt in
-`agent/PROMPT.md`). Each lab run measures the progress, ships at least one
-verified change to the game package, tests it, commits, deploys and writes a
-lab report into `agent/reports/`. The permissions in `.claude/settings.json`
-forbid `sudo`, pushing and editing the training data.
+## Running on Dokku
 
-Every value the scripts need is in the `dokku` and `agent` sections of
-`config.yaml`. Once:
+The search runs as the Dokku app `dokku.app` on the server `dokku.host` (an SSH alias for the server's Dokku user).
 
-```bash
-dokku/setup.sh
-ssh <dokku.host> config:set --no-restart <dokku.app> CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>
-```
+Once, create and configure the app (no web proxy, no overlapping deploys). All persistent data lives on the server
+under `dokku.data_dir`: `working/` holds the search's movie, progress and log. The directories are created through
+your own login on the server with `sudo`:
 
-Clone this project into `dokku.workspace_dir` on the server, then deploy:
+    dokku/setup.sh
 
-```bash
-dokku/deploy.sh
-```
+Clone this project and the engine into `dokku.workspace_dir` on the server; the lab runs work there. Every deploy
+builds a repository from this project plus the committed `../retro-speedlab-core` and pushes it; commit core changes
+first:
 
-Each deploy registers the lab run with Dokku's scheduler. Write server
-specifics (training data folder, backend address) into `NOTES.md`; the lab
-runs read them there.
+    dokku/deploy.sh
+
+Follow the search and open the stream:
+
+    ssh <dokku.host> logs <dokku.app> --tail
+    https://www.retrospeedlab.com/stream?api_key=<stream key>
 
 ## Quality checks
 
-```bash
-poetry run ruff check .
-poetry run ruff format --check .
-poetry run pytest
-```
+    poetry run ruff check .
+    poetry run ruff format --check .
+    poetry run pytest
 
 ## License
 

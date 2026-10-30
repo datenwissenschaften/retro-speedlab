@@ -1,0 +1,44 @@
+paths:
+  roms: roms
+  integrations: integrations
+  models: working/models
+  cache: working/cache
+  lab_run: ../.lab-run
+training:
+  game: {{ cookiecutter.game }}
+log_level: INFO
+upload:
+  url: https://api.retrospeedlab.com
+  api_key: null
+ui:
+  enable: true
+  release: local
+twitch:
+  enabled: false
+dokku:
+  host: dokku
+  server: dokku-host
+  app: {{ cookiecutter.project_slug }}
+  data_dir: /var/lib/dokku/data/storage/{{ cookiecutter.project_slug }}
+  workspace_dir: /srv/{{ cookiecutter.project_slug }}-workspace
+  host_address: 172.17.0.1
+speedrun:
+  workers: 10
+  segment_seconds: 120
+  id: {{ cookiecutter.project_slug }}
+  title: "{{ cookiecutter.game_title }}"
+  platform: NES
+  category: Any%
+  speedrun_com:
+    game: <speedrun.com game id>
+    category: <speedrun.com category id>
+    variables: {}
+  tasvideos: <TASVideos game id>
+agent:
+  schedule: "*/10 * * * *"
+  stall_minutes: 15
+  minutes: 12
+  extension_minutes: 6
+  model: opus
+  git_name: {{ cookiecutter.project_name }} lab agent
+  git_email: {{ cookiecutter.author_email }}

@@ -2,6 +2,7 @@
   "project_name": "Retro Speedlab Game",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
   "game": "SnakeRattleNRoll-Nes-v0",
+  "game_title": "{{ cookiecutter.game.split('-')[0] }}",
   "author_name": "author_name",
   "author_email": "author_email@example.com",
   "_copy_without_render": [
