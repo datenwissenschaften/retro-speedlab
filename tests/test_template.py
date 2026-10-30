@@ -168,6 +168,23 @@ def test_the_game_title_defaults_to_the_game_name(tmp_path: Path) -> None:
     assert _config(project_dir)["speedrun"]["title"] == "SuperMarioBros"
 
 
+def test_the_stream_and_the_server_come_from_the_context(tmp_path: Path) -> None:
+    context = {
+        "twitch_enabled": "false",
+        "dokku_host": "dokku-home",
+        "dokku_server": "me@dokku-home",
+        "dokku_host_address": "198.51.100.7",
+        "dokku_workspace_dir": "/home/me/speedlab",
+    }
+    config = _config(_generate(tmp_path, context))
+
+    assert config["twitch"]["enabled"] is False
+    assert config["dokku"]["host"] == "dokku-home"
+    assert config["dokku"]["server"] == "me@dokku-home"
+    assert config["dokku"]["host_address"] == "198.51.100.7"
+    assert config["dokku"]["workspace_dir"] == "/home/me/speedlab"
+
+
 @pytest.mark.parametrize(
     ("project_name", "expected_slug"),
     [

@@ -14,14 +14,14 @@ ui:
   enable: true
   release: local
 twitch:
-  enabled: false
+  enabled: {{ cookiecutter.twitch_enabled }}
 dokku:
-  host: dokku
-  server: dokku-host
+  host: {{ cookiecutter.dokku_host }}
+  server: {{ cookiecutter.dokku_server }}
   app: {{ cookiecutter.project_slug }}
   data_dir: /var/lib/dokku/data/storage/{{ cookiecutter.project_slug }}
-  workspace_dir: /srv/{{ cookiecutter.project_slug }}-workspace
-  host_address: 172.17.0.1
+  workspace_dir: {{ cookiecutter.dokku_workspace_dir }}
+  host_address: {{ cookiecutter.dokku_host_address }}
 speedrun:
   workers: 10
   segment_seconds: 120

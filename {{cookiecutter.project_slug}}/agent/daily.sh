@@ -28,6 +28,7 @@ finish() {
 }
 trap finish EXIT
 readonly WRAP_UP_SECONDS=120
+readonly IDLE_ROUND_SECONDS=120
 readonly OOM_KILL_FIRST=1000
 readonly MODEL="$(setting agent.model)"
 readonly AGENT_KEY="/workspace/.ssh/agent_key"
@@ -58,7 +59,8 @@ seconds_left() {
 
 continue_prompt() {
     echo "$(( $(seconds_left) / 60 )) minutes of this run are left. \
-Keep working as agent/PROMPT.md says, from where you stopped. Update the same report and commit before you stop."
+Keep working as agent/PROMPT.md says, from where you stopped. Update the same report and commit before you stop. \
+If nothing useful is left to do, stop at once without a commit."
 }
 
 mark_phase() {
@@ -86,7 +88,9 @@ run_agent() {
 
 The base commit of this run is ${BASE}." "${AGENT_OPTIONS[@]}" || true
     while (( $(seconds_left) > WRAP_UP_SECONDS )); do
+        local round_start="$(date +%s)"
         timeout "$(seconds_left)" claude -p --continue "$(continue_prompt)" "${AGENT_OPTIONS[@]}" || break
+        (( $(date +%s) - round_start >= IDLE_ROUND_SECONDS )) || break
     done
 }
 

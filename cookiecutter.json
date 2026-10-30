@@ -5,6 +5,11 @@
   "game_title": "{{ cookiecutter.game.split('-')[0] }}",
   "author_name": "author_name",
   "author_email": "author_email@example.com",
+  "twitch_enabled": "true",
+  "dokku_host": "dokku",
+  "dokku_server": "user@dokku",
+  "dokku_host_address": "192.0.2.10",
+  "dokku_workspace_dir": "/srv/speedlab",
   "_copy_without_render": [
     ".claude/skills/*"
   ]
