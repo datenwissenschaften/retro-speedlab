@@ -60,6 +60,9 @@ Read these first, nothing else in full:
   state being searched now; `/app/working/cache/tas/search.log` for the search's own log.
 - `NOTES.md` and `notes/level<N>.md` (`## Now` header) for verified RAM and mechanics.
 - The last report in `agent/reports/`.
+- `/app/working/cache/reference/`: the published TAS of this game from TASVideos. `frames/<seconds>s.png` holds
+  4 frames per second of its video: how it beats each level, where the exits are and what opens them.
+  `movie/*.fm2` holds its inputs, one frame per line.
 
 Write back what the team learned in the same places, with evidence. Never write guesses into the notes.
 
@@ -69,7 +72,8 @@ Check the time with `date -u` at the start and before each step.
 
 1. **Where is the run?** Read `metadata.speedrun`: the furthest state, the segment being searched, and the search
    log's last lines (a segment that keeps failing says "found no way out of <State>").
-2. **Plan from the stuck state.** Pick one change, in this order: a segment the search cannot leave (its key or
+2. **Plan from the stuck state.** Look first at the reference frames where the TAS passes the stuck state: what it
+   does there is the goal the state needs. Pick one change, in this order: a segment the search cannot leave (its key or
    reward misses something), the next level that has no states yet (research its route, add its states with
    verified transitions), a slower route than the records' (a skip or warp the category allows), then removing
    what no longer helps. Start the scout and the researcher in parallel (one message, two Agent calls) on the
