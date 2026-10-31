@@ -29,6 +29,7 @@ finish() {
 trap finish EXIT
 readonly WRAP_UP_SECONDS=120
 readonly IDLE_ROUND_SECONDS=120
+readonly NOT_DEPLOYED=(':(exclude)agent' ':(exclude)NOTES.md' ':(exclude)notes' ':(exclude)tests' ':(exclude)README.md' ':(exclude).claude')
 readonly OOM_KILL_FIRST=1000
 readonly MODEL="$(setting agent.model)"
 readonly AGENT_KEY="/workspace/.ssh/agent_key"
@@ -108,8 +109,8 @@ accepted() {
 
 ship() {
     git -C "${PROJECT_DIR}" merge --no-edit --quiet "${BRANCH}"
-    if git -C "${PROJECT_DIR}" diff --quiet "${BASE}" HEAD -- . ':(exclude)agent'; then
-        echo "Lab run ${STAMP}: only agent/ changed, the search keeps running"
+    if git -C "${PROJECT_DIR}" diff --quiet "${BASE}" HEAD -- . "${NOT_DEPLOYED[@]}"; then
+        echo "Lab run ${STAMP}: only notes, tests and reports changed, the search keeps running"
         return
     fi
     mkdir -p "${HOME}/.ssh"
