@@ -19,6 +19,7 @@ ssh "${SERVER_HOST}" "mkdir -p ${WORKSPACE_DIR}/.ssh && chmod 700 ${WORKSPACE_DI
     && { test -f ${AGENT_KEY} || ssh-keygen -q -t ed25519 -N '' -C ${APP}-agent -f ${AGENT_KEY}; }"
 dokku apps:exists "${APP}" || dokku apps:create "${APP}"
 dokku docker-options:add "${APP}" deploy,run "--shm-size=2g"
+dokku docker-options:add "${APP}" deploy,run "--gpus all"
 dokku storage:mount "${APP}" "${DATA_DIR}/working:/app/working"
 dokku storage:mount "${APP}" "${WORKSPACE_DIR}:/workspace"
 ssh "${SERVER_HOST}" cat "${AGENT_KEY}.pub" | ssh -t "${SERVER_HOST}" sudo dokku ssh-keys:add "${APP}-agent"

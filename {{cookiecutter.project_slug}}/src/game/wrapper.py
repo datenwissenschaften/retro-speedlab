@@ -11,3 +11,5 @@ class GameWrapper(StateMachineGymWrapper[GameRam]):
     ram_info_cls = GameRam
     action_table = ACTION_TABLE
     levels = ()
+    level_address = None
+    level_count = 1

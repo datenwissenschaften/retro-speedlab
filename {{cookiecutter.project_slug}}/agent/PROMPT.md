@@ -18,6 +18,9 @@ reaches a later state. Each level is beaten and retrained on its own from a fixe
 its route is verified from there after every segment; only once every level is beaten is a full run from power-on
 built from the level routes. So the game package decides how far and how fast the search gets:
 
+- **`position()` is the map.** The search keys its cells by `GameRam.position()` (area, x, y, height); without
+  one it falls back to `dynamics()`, and without both to 30-frame time buckets, so it cannot tell places apart.
+  The TAS route below needs the position too.
 - **States are the road.** The search can only aim at states the machine recognises. A level without states is
   invisible to it. Every boundary is a visible game event (an item picked up, a door opening, a new level) read
   from a verified RAM value. Every state sets a one-line `goal` (at most 60 characters) the stream shows.
@@ -63,6 +66,8 @@ Read these first, nothing else in full:
 - `/app/working/cache/reference/`: the published TAS of this game from TASVideos. `frames/<seconds>s.png` holds
   4 frames per second of its video: how it beats each level, where the exits are and what opens them.
   `movie/*.fm2` holds its inputs, one frame per line.
+  `trace.json` lists the TAS's position per video frame (frame, area, x, y, height) as the guide model reads it
+  from the video, and `route.json` how many frames the TAS still needed from each place; the search follows it.
 
 Write back what the team learned in the same places, with evidence. Never write guesses into the notes.
 

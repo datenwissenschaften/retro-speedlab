@@ -1,7 +1,8 @@
 FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS requirements
 COPY core/pyproject.toml /
-RUN python -c "import tomllib; dependencies = tomllib.load(open('/pyproject.toml', 'rb'))['project']['dependencies']; \
-open('/requirements.txt', 'w').write('\n'.join(dependencies))"
+RUN python -c "import tomllib; project = tomllib.load(open('/pyproject.toml', 'rb'))['project']; \
+open('/requirements.txt', 'w').write('\n'.join(project['dependencies'])); \
+open('/vision.txt', 'w').write('\n'.join(project['optional-dependencies']['vision']))"
 
 FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
@@ -11,6 +12,9 @@ RUN apt-get update \
 RUN curl -fsSL https://claude.ai/install.sh | bash && pip install pytest ruff yt-dlp
 ENV PATH="/root/.local/bin:${PATH}"
 WORKDIR /opt/retro-speedlab-core
+COPY --from=requirements /vision.txt ./
+RUN --mount=type=cache,target=/root/.cache/pip env -u PIP_NO_CACHE_DIR pip install --timeout 120 --retries 10 \
+        --requirement vision.txt
 COPY --from=requirements /requirements.txt ./
 RUN --mount=type=cache,target=/root/.cache/pip env -u PIP_NO_CACHE_DIR pip install --timeout 120 --retries 10 \
         --requirement requirements.txt

@@ -126,6 +126,9 @@ never copy button sequences into the game package.
   verified bytes and return `None` where they are not valid (title, game-over and continue screens). A count
   that drops without a death (a mirror, a byte reused in a bonus stage) drops good branches: check it on frames
   of a real death and of a long run without one.
+- **Set `GameWrapper.level_address` and `level_count`**: the RAM byte of the level number (a RAM map names it)
+  and the number of levels. The guide loads every level through it to learn to read positions from the TAS
+  video; use `None` and 1 while the byte is unknown.
 - **Return `GameRam.dynamics()`**: the coarsest tuple that tells good cells from bad ones beyond the position
   (what the player collected, the nearest moving object's offset, a platform's phase). The search keeps one
   savestate per cell, so a missing value merges cells that should differ.
