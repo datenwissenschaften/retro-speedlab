@@ -223,7 +223,7 @@ nothing), and damage is compared with the previous frame so a respawn is not cha
   stable-retro states (`Level1.state`).
 - Each segment is searched Go-Explore style from the previous segment's savestate: cells keyed by state,
   8 px position, height, airborne and `dynamics()`, random input bursts of the action table, the state's reward
-  and the route memory (`<paths.models>/<game>/<State>/route.json`) as guides. Deaths (`remaining_lives()`)
+  and the TAS route (`<paths.working>/cache/reference/route.json`) as guides. Deaths (`remaining_lives()`)
   and backward transitions end a branch.
 - After every segment the whole movie replays from power-on; a segment that does not reproduce is searched
   again. A segment without a way out is marked stuck in `cache/tas/stuck.json`, which starts a lab run.

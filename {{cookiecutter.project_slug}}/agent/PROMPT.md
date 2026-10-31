@@ -66,8 +66,9 @@ Read these first, nothing else in full:
 - `/app/working/cache/reference/`: the published TAS of this game from TASVideos. `frames/<seconds>s.png` holds
   4 frames per second of its video: how it beats each level, where the exits are and what opens them.
   `movie/*.fm2` holds its inputs, one frame per line.
-  `trace.json` lists the TAS's position per video frame (frame, area, x, y, height) as the guide model reads it
-  from the video, and `route.json` how many frames the TAS still needed from each place; the search follows it.
+  `trace.json` lists the TAS's position per video frame (frame, area, x, y) as the guide model reads it
+  from the video (levels only go up), and `route.json` how many frames the TAS still needed from each 16 px cell
+  (area, x, y, frame, left); the search prefers those cells.
 
 Write back what the team learned in the same places, with evidence. Never write guesses into the notes.
 
