@@ -26,7 +26,7 @@ built from the level routes. So the game package decides how far and how fast th
   from a verified RAM value. Every state sets a one-line `goal` (at most 60 characters) the stream shows.
 - **Every level is practised on its own.** With `GameRam.level()` and the wrapper's `level_address`, the engine
   keeps the frame before the first level change any route makes and loads every other level from it. Each level
-  is a part of the route, searched in turns with 3 failed searches each; the stream shows practice times in
+  is a part of the route, searched in turns of 3 searches each; the stream shows practice times in
   italics. `level_states(first, last)` from `datenwissenschaften.states.levels` gives one state per level that
   ends when the level byte rises by one and ends the attempt on any other change (a warp). Give a level its own
   detailed states like level 1's when one state is too coarse, and let its last state hand over to the next
