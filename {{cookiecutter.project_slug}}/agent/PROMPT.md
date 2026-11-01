@@ -24,6 +24,14 @@ built from the level routes. So the game package decides how far and how fast th
 - **States are the road.** The search can only aim at states the machine recognises. A level without states is
   invisible to it. Every boundary is a visible game event (an item picked up, a door opening, a new level) read
   from a verified RAM value. Every state sets a one-line `goal` (at most 60 characters) the stream shows.
+- **Every level is practised on its own.** With `GameRam.level()` and the wrapper's `level_address`, the engine
+  keeps the frame before the first level change any route makes and loads every other level from it. Each level
+  is a part of the route, searched in turns with 3 failed searches each; the stream shows practice times in
+  italics. `level_states(first, last)` from `datenwissenschaften.states.levels` gives one state per level that
+  ends when the level byte rises by one and ends the attempt on any other change (a warp). Give a level its own
+  detailed states like level 1's when one state is too coarse, and let its last state hand over to the next
+  level state. `GameRam.progress()` rises as a level is played (items eaten, gates filled) and pays the level
+  states' reward. In a warpless category every state ends the attempt on a level change other than +1.
 - **Rewards are the signal.** Inside a segment the search prefers cells that earned more of the state's reward;
   progress toward the exit must pay, deaths must cost.
 - **`dynamics()` is the memory.** When the search stalls in a segment, its key misses what matters there: what the
