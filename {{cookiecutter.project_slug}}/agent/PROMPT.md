@@ -76,9 +76,11 @@ Read these first, nothing else in full:
 - `/app/working/cache/reference/`: the published TAS of this game from TASVideos. `frames/<seconds>s.png` holds
   4 frames per second of its video: how it beats each level, where the exits are and what opens them.
   `movie/*.fm2` holds its inputs, one frame per line.
-  `trace.json` lists the TAS's position per video frame (frame, area, x, y) as the guide model reads it
-  from the video (levels only go up), and `route.json` how many frames the TAS still needed from each 16 px cell
-  (area, x, y, frame, left); the search prefers those cells.
+  `route.json` is the route map of the beaten levels: per 16 px cell (area, x, y, frame, left) how many frames
+  that level's route still needed to its exit; the search prefers those cells. The TAS's positions are not read
+  from its video (the guide model misread them, `trace.unreliable.json`): take them from the frames.
+- `/app/working/cache/tas/`: `prior.msgpack` is the move table learned from every stored piece, `policy.log` the
+  PPO policy's rounds per level (reward per episode and exits).
 
 Write back what the team learned in the same places, with evidence. Never write guesses into the notes.
 
