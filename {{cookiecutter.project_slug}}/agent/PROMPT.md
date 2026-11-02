@@ -31,7 +31,9 @@ built from the level routes. So the game package decides how far and how fast th
   ends when the level byte rises by one and ends the attempt on any other change (a warp). Give a level its own
   detailed states like level 1's when one state is too coarse, and let its last state hand over to the next
   level state. `GameRam.progress()` rises as a level is played (items eaten, gates filled) and pays the level
-  states' reward. In a warpless category every state ends the attempt on a level change other than +1.
+  states' reward. In a warpless category every state ends the attempt on a level change other than +1. Every level
+  of the game stays in `levels` and in the chain, from the first to the last, so the splits show them all and
+  every level is practised; only the last level's last state ends the run (`following = None`).
 - **Rewards are the signal.** Inside a segment the search prefers cells that earned more of the state's reward;
   progress toward the exit must pay, deaths must cost.
 - **`dynamics()` is the memory.** When the search stalls in a segment, its key misses what matters there: what the
