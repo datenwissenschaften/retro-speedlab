@@ -26,6 +26,7 @@ speedrun:
   workers: 10
   segment_seconds: 120
   guide: false
+  policy: false
   id: {{ cookiecutter.project_slug }}
   title: "{{ cookiecutter.game_title }}"
   platform: NES
