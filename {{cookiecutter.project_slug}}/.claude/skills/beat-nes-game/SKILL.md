@@ -221,10 +221,13 @@ nothing), and damage is compared with the previous frame so a respawn is not cha
 - Every movie boots the game at power-on with every button, like a real speedrun: the title screen is the
   first state (a `Menu` state), and every level is a later state of the same run. Never use the bundled
   stable-retro states (`Level1.state`).
-- Each segment is searched Go-Explore style from the previous segment's savestate: cells keyed by state,
-  8 px position, height, airborne and `dynamics()`, random input bursts of the action table, the state's reward
-  and the TAS route (`<paths.working>/cache/reference/route.json`) as guides. Deaths (`remaining_lives()`)
-  and backward transitions end a branch.
+- Each segment is searched from the previous segment's savestate over an archive of cells keyed by state,
+  8 px position, height, airborne and `dynamics()`. Three modes share the time: Go-Explore walks (60 %), a
+  frontier search that tries every action of the action table with holds of 1, 3 and 8 decisions, three deep,
+  breadth first (20 %), and a Monte Carlo tree search with UCB (20 %). Places pay with the state's reward, the
+  route map (`<paths.working>/cache/reference/route.json`), RAM values never seen before in the segment, and a
+  move preference learned from every stored piece (`tas/prior.msgpack`). Deaths (`remaining_lives()`) and
+  backward transitions end a branch.
 - After every segment the whole movie replays from power-on; a segment that does not reproduce is searched
   again. A segment without a way out is marked stuck in `cache/tas/stuck.json`, which starts a lab run.
 - `GameWrapper.levels` groups the states into levels for the stream's level splits.
