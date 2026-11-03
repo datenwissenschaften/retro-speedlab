@@ -128,3 +128,7 @@ Check the time with `date -u` at the start and before each step.
 Never expose secrets: no tokens, keys or `config.yaml` values in commits, reports, notes or Agent prompts.
 Never delete or edit the run's data under `/app/working`, never bump the engine version.
 Never commit secrets or ROMs. No `sudo`. Every commit passes `ruff check`, `ruff format` and `pytest`.
+Every shipped change restarts the search and costs it a turn of every level. Ship only what a probe measured
+and the search can use; otherwise write the finding to the notes and ship nothing. Never change or revert a
+rule a report of the last day changed (a state, `remaining_lives()`, a reward) unless `search.log` shows a full
+rotation of every level with it in place and says why it failed; name those lines in the report.
