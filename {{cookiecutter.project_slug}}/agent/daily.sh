@@ -143,8 +143,8 @@ if [[ "${verdict}" == "${AGENT}" ]]; then
     outcome=notes
     git -C "${PROJECT_DIR}" diff --quiet "${BASE}" "${BRANCH}" -- . "${NOT_DEPLOYED[@]}" || outcome=deployed
 fi
-python -m datenwissenschaften.lab.tracing "${AGENT_LOG}" "$(setting training.game)" "${STAMP}" "${BASE}" "${outcome}" \
-    "${commits}" || echo "Lab run ${STAMP}: the trace was not sent"
+python -m datenwissenschaften.lab.record "${PROJECT_DIR}/config.yaml" "${AGENT_LOG}" "${STAMP}" "${BASE}" "${outcome}" \
+    "${commits}" || echo "Lab run ${STAMP}: the run was not recorded"
 if [[ "${verdict}" == "${AGENT}" ]]; then
     ship
 fi
