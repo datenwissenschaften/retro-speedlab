@@ -59,5 +59,5 @@ git -C "${build_dir}" add --all --force
 git -C "${build_dir}" add --force app/config.yaml "app/roms/${GAME}.nes"
 git -C "${build_dir}" commit --quiet --message "Deploy ${APP} ${release} with retro-speedlab-core $(git -C "${CORE_DIR}" rev-parse --short HEAD)"
 GIT_SSH_COMMAND="ssh -o ServerAliveInterval=30" git -C "${build_dir}" push --force "${DOKKU_HOST}:${APP}" main
-ssh "${DOKKU_HOST}" config:set --no-restart "${APP}" RELEASE="${release}"
+ssh "${DOKKU_HOST}" config:set --no-restart "${APP}" RELEASE="${release}" CORE_REV="$(git -C "${CORE_DIR}" rev-parse HEAD)"
 echo "Deployed ${APP} ${release}"
