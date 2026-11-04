@@ -129,6 +129,11 @@ Never expose secrets: no tokens, keys or `config.yaml` values in commits, report
 Never delete or edit the run's data under `/app/working`, never bump the engine version.
 Never commit secrets or ROMs. No `sudo`. Every commit passes `ruff check`, `ruff format` and `pytest`.
 Every shipped change restarts the search and costs it a turn of every level. Ship only what a probe measured
-and the search can use; otherwise write the finding to the notes and ship nothing. Never change or revert a
+and the search can use; otherwise write the finding to the notes and ship nothing.
+When a probe finds the inputs that lead out of a state, ship them as a hint in `hints.json`, which the search
+can use: `[{"state": "Level5Bell", "presses": [[44, ["DOWN"]], [1, ["DOWN", "A"]], [120, []]]}]`, each press
+being frames held and the emulator's button names. Before it searches a state the TAS replays every hint for it
+from each start it has in that state, beginning where the piece that entered it ends, and keeps the first hint that
+crosses into a later state and holds; a hint that fails costs nothing. Write a hint from the start the probe used. Never change or revert a
 rule a report of the last day changed (a state, `remaining_lives()`, a reward) unless `search.log` shows a full
 rotation of every level with it in place and says why it failed; name those lines in the report.
