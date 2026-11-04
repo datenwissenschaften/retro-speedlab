@@ -138,7 +138,12 @@ printf '{"winner": "%s", "confidence": 1.0, "scores": []}\n' "${verdict}" >"${RE
 echo "Lab run ${STAMP}: ${verdict}"
 mark_phase decided
 commits="$(git -C "${PROJECT_DIR}" rev-list --count "${BASE}..${BRANCH}")"
-python -m datenwissenschaften.lab.tracing "${AGENT_LOG}" "$(setting training.game)" "${STAMP}" "${BASE}" "${verdict}" \
+outcome=rejected
+if [[ "${verdict}" == "${AGENT}" ]]; then
+    outcome=notes
+    git -C "${PROJECT_DIR}" diff --quiet "${BASE}" "${BRANCH}" -- . "${NOT_DEPLOYED[@]}" || outcome=deployed
+fi
+python -m datenwissenschaften.lab.tracing "${AGENT_LOG}" "$(setting training.game)" "${STAMP}" "${BASE}" "${outcome}" \
     "${commits}" || echo "Lab run ${STAMP}: the trace was not sent"
 if [[ "${verdict}" == "${AGENT}" ]]; then
     ship
