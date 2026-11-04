@@ -137,6 +137,9 @@ fi
 printf '{"winner": "%s", "confidence": 1.0, "scores": []}\n' "${verdict}" >"${RESULT}"
 echo "Lab run ${STAMP}: ${verdict}"
 mark_phase decided
+commits="$(git -C "${PROJECT_DIR}" rev-list --count "${BASE}..${BRANCH}")"
+python -m datenwissenschaften.lab.tracing "${AGENT_LOG}" "$(setting training.game)" "${STAMP}" "${BASE}" "${verdict}" \
+    "${commits}" || echo "Lab run ${STAMP}: the trace was not sent"
 if [[ "${verdict}" == "${AGENT}" ]]; then
     ship
 fi
