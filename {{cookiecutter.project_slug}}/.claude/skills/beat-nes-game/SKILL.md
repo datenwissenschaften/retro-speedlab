@@ -71,13 +71,13 @@ the win flag set.
 Before measuring anything, find out from published sources what a player has to do to beat the level, and how
 the fastest runs route it, with `WebSearch` and `WebFetch`:
 
-- **Videos** (YouTube speedruns, TASVideos encodes, speedrun.com, World of Longplays): the route, the places
-  of each objective and the tricks that skip parts; the inputs where an input display shows them. Never replay
-  a movie file's inputs, they do not sync in `stable_retro`.
+- **Videos of human runs** (the top runs on the game's speedrun.com board, YouTube speedruns, World of
+  Longplays): the route humans take, the places of each objective and the tricks that skip parts; the inputs
+  where an input display shows them. Never replay a run's inputs, they do not sync in `stable_retro`.
 - **Walkthroughs, guides and the original manual** (GameFAQs, StrategyWiki, fan sites, manual scans): the
   level's goal, the order of its gates (what opens the exit), the items, enemies and hazards, and how the level
   ends.
-- **RAM maps** (Data Crystal, TASVideos game resources): candidate addresses for lives, position, level,
+- **RAM maps** (Data Crystal): candidate addresses for lives, position, level,
   timers and progress flags.
 
 Write the findings into each level's `notes/level<N>.md` under `## Walkthrough`: numbered steps from the
@@ -127,8 +127,8 @@ never copy button sequences into the game package.
   that drops without a death (a mirror, a byte reused in a bonus stage) drops good branches: check it on frames
   of a real death and of a long run without one.
 - **Set `GameWrapper.level_address` and `level_count`**: the RAM byte of the level number (a RAM map names it)
-  and the number of levels. The guide loads every level through it to learn to read positions from the TAS
-  video; use `None` and 1 while the byte is unknown.
+  and the number of levels. The engine loads every level through it to practise each level on its own; use
+  `None` and 1 while the byte is unknown.
 - **Return `GameRam.dynamics()`**: the coarsest tuple that tells good cells from bad ones beyond the position
   (what the player collected, the nearest moving object's offset, a platform's phase). The search keeps one
   savestate per cell, so a missing value merges cells that should differ.

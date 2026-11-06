@@ -25,8 +25,8 @@ The engine is a sibling checkout: clone
 [retro-speedlab-core](https://github.com/datenwissenschaften/retro-speedlab-core) next to this project as
 `../retro-speedlab-core`.
 
-Copy `config.example.yaml` to `config.yaml`, fill in the `speedrun` section (speedrun.com and TASVideos ids of the
-game and category) and set `upload.api_key` to relay the stream. `config.yaml` is ignored by git; never commit it.
+Copy `config.example.yaml` to `config.yaml`, fill in the `speedrun` section (the speedrun.com ids of the game and
+category, whose top human run the lab learns the route from) and set `upload.api_key` to relay the stream. `config.yaml` is ignored by git; never commit it.
 
 Put the ROM you own as `roms/{{ cookiecutter.game }}.nes` into `roms/`; never commit it. A game Stable Retro does not
 integrate gets its integration in `integrations/{{ cookiecutter.game }}/`. Then run:

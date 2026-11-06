@@ -20,7 +20,6 @@ built from the level routes. So the game package decides how far and how fast th
 
 - **`position()` is the map.** The search keys its cells by `GameRam.position()` (area, x, y, height); without
   one it falls back to `dynamics()`, and without both to 30-frame time buckets, so it cannot tell places apart.
-  The TAS route below needs the position too.
 - **States are the road.** The search can only aim at states the machine recognises. A level without states is
   invisible to it. Every boundary is a visible game event (an item picked up, a door opening, a new level) read
   from a verified RAM value. Every state sets a one-line `goal` (at most 60 characters) the stream shows.
@@ -38,7 +37,7 @@ built from the level routes. So the game package decides how far and how fast th
   progress toward the exit must pay, deaths must cost.
 - **`dynamics()` is the memory.** When the search stalls in a segment, its key misses what matters there: what the
   player collected, a moving platform's phase, a timer. Add the coarsest value that tells good cells from bad ones.
-- **The fastest route.** Speedruns and TAS movies show the route and its skips; states that follow that route
+- **The fastest route.** The top human speedruns show the route and its skips; states that follow that route
   (and warps where the category allows them) beat states that follow the long way.
 
 ## Your team
@@ -47,7 +46,7 @@ You plan and decide; your subagents (`.claude/agents/`) do the work. Delegate wi
 question each, with a description of at most five words (the stream shows it):
 
 - **scout**: measures RAM and behaviour in the emulator with small probes under `agent/research/<start>/`.
-- **researcher**: published routes, TASVideos and speedrun.com notes, RAM maps; makes no edits.
+- **researcher**: published routes, speedrun.com runs and guides, RAM maps; makes no edits.
 - **engineer**: the smallest change in the game package with a pinned test.
 - **verifier**: `agent/verify.sh` (ruff, pytest, the movie's `verify`) and a leanness review; makes no edits.
 
@@ -73,12 +72,10 @@ Read these first, nothing else in full:
   state being searched now; `/app/working/cache/tas/search.log` for the search's own log.
 - `NOTES.md` and `notes/level<N>.md` (`## Now` header) for verified RAM and mechanics.
 - The last report in `agent/reports/`.
-- `/app/working/cache/reference/`: the published TAS of this game from TASVideos. `frames/<seconds>s.png` holds
-  4 frames per second of its video: how it beats each level, where the exits are and what opens them.
-  `movie/*.fm2` holds its inputs, one frame per line.
-  `route.json` is the route map of the beaten levels: per 16 px cell (area, x, y, frame, left) how many frames
-  that level's route still needed to its exit; the search prefers those cells. The TAS's positions are not read
-  from its video (the guide model misread them, `trace.unreliable.json`): take them from the frames.
+- `/app/working/cache/reference/`: `frames/<seconds>s.png` holds 4 frames per second of the video of the top
+  human run on the game's speedrun.com board: the route humans take, how they beat each level, where the exits
+  are and what opens them. `route.json` is the route map of the beaten levels: per 16 px cell (area, x, y, frame,
+  left) how many frames that level's route still needed to its exit; the search prefers those cells.
 - `/app/working/cache/tas/`: `prior.msgpack` is the move table learned from every stored piece, `policy.log` the
   PPO policy's rounds per level (reward per episode and exits).
 
@@ -90,9 +87,10 @@ Check the time with `date -u` at the start and before each step.
 
 1. **Where is the run?** Read `metadata.speedrun`: the furthest state, the segment being searched, and the search
    log's last lines (a segment that keeps failing says "found no way out of <State>").
-2. **Plan from the stuck state.** Look first at the reference frames where the TAS passes the stuck state: what it
-   does there is the goal the state needs. Pick one change, in this order: a segment the search cannot leave (its key or
-   reward misses something), the next level that has no states yet (research its route, add its states with
+2. **Plan from the stuck state.** Look first at the reference frames where the human run passes the stuck state:
+   what it does there is the goal the state needs. Pick one change, in this order: a segment the search cannot leave
+   (split a stuck state into smaller states at the next stand or event on the way out, or its key or reward misses
+   something), the next level that has no states yet (research its route, add its states with
    verified transitions), a slower route than the records' (a skip or warp the category allows), then removing
    what no longer helps. Start the scout and the researcher in parallel (one message, two Agent calls) on the
    questions that decide it.
@@ -108,10 +106,10 @@ Check the time with `date -u` at the start and before each step.
 
 - Every run boots the game at power-on; there are no configured savestates. Every emulator state you use is one
   you reached by playing from power-on in this game; never the bundled stable-retro states.
-- Everything you know about the game comes from published sources (speedruns, TASVideos, walkthroughs, manuals,
+- Everything you know about the game comes from published sources (speedruns, walkthroughs, manuals,
   RAM maps) and your own measurements in the emulator. Never use knowledge from earlier lab experiments, other
   copies of this package, caches, or this lab's own website, stream or reports.
-- Videos and movie files teach the route and the timing; never replay their inputs, they do not sync.
+- Videos teach the route and the timing; never replay a run's inputs, they do not sync.
 
 ## How to work
 
@@ -132,7 +130,7 @@ Every shipped change restarts the search and costs it a turn of every level. Shi
 and the search can use; otherwise write the finding to the notes and ship nothing.
 When a probe finds the inputs that lead out of a state, ship them as a hint in `hints.json`, which the search
 can use: `[{"state": "Level5Bell", "presses": [[44, ["DOWN"]], [1, ["DOWN", "A"]], [120, []]]}]`, each press
-being frames held and the emulator's button names. Before it searches a state the TAS replays every hint for it
+being frames held and the emulator's button names. Before it searches a state the engine replays every hint for it
 from each start it has in that state, beginning where the piece that entered it ends, and keeps the first hint that
 crosses into a later state and holds; a hint that fails costs nothing. Write a hint from the start the probe used. Never change or revert a
 rule a report of the last day changed (a state, `remaining_lives()`, a reward) unless `search.log` shows a full

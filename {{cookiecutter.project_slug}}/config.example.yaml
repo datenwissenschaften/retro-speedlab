@@ -25,7 +25,6 @@ dokku:
 speedrun:
   workers: 10
   segment_seconds: 120
-  guide: false
   policy: false
   policy_emulators: 3
   id: {{ cookiecutter.project_slug }}
@@ -36,7 +35,6 @@ speedrun:
     game: <speedrun.com game id>
     category: <speedrun.com category id>
     variables: {}
-  tasvideos: <TASVideos game id>
 agent:
   schedule: "*/10 * * * *"
   stall_minutes: 60
