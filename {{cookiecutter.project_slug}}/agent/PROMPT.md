@@ -11,7 +11,7 @@ deletes what no longer helps is a good run.
 
 ## How the run is made
 
-The engine (`datenwissenschaften.tas`) splits the run at the game's states (`GameWrapper.state_classes` in order)
+The engine (`datenwissenschaften.speedrun`) splits the run at the game's states (`GameWrapper.state_classes` in order)
 and searches each segment on savestates for the fewest frames: an archive of cells keyed by state, position and
 `GameRam.dynamics()`, guided by the route memory and the state's reward. A segment ends when the state machine
 reaches a later state. Each level is beaten and retrained on its own from a fixed savestate at its start, and
@@ -23,16 +23,15 @@ built from the level routes. So the game package decides how far and how fast th
 - **States are the road.** The search can only aim at states the machine recognises. A level without states is
   invisible to it. Every boundary is a visible game event (an item picked up, a door opening, a new level) read
   from a verified RAM value. Every state sets a one-line `goal` (at most 60 characters) the stream shows.
-- **Every level is practised on its own.** With `GameRam.level()` and the wrapper's `level_address`, the engine
-  keeps the frame before the first level change any route makes and loads every other level from it. Each level
-  is a part of the route, searched in turns of 3 searches each; the stream shows practice times in
-  italics. `level_states(first, last)` from `datenwissenschaften.states.levels` gives one state per level that
-  ends when the level byte rises by one and ends the attempt on any other change (a warp). Give a level its own
+- **Levels are beaten one after the other.** The engine searches the earliest unbeaten level until it is beaten,
+  starting where the route of the level before it ends, and only then moves to the next. `level_states(first,
+  last)` from `datenwissenschaften.states.levels` gives one state per level that ends when the level byte
+  (`GameRam.level()`) rises by one and ends the attempt on any other change (a warp). Give a level its own
   detailed states like level 1's when one state is too coarse, and let its last state hand over to the next
   level state. `GameRam.progress()` rises as a level is played (items eaten, gates filled) and pays the level
   states' reward. In a warpless category every state ends the attempt on a level change other than +1. Every level
-  of the game stays in `levels` and in the chain, from the first to the last, so the splits show them all and
-  every level is practised; only the last level's last state ends the run (`following = None`).
+  of the game stays in `levels` and in the chain, from the first to the last, so the splits show them all; only
+  the last level's last state ends the run (`following = None`).
 - **Rewards are the signal.** Inside a segment the search prefers cells that earned more of the state's reward;
   progress toward the exit must pay, deaths must cost.
 - **`dynamics()` is the memory.** When the search stalls in a segment, its key misses what matters there: what the
@@ -59,7 +58,7 @@ at a time: the search shares the CPU.
 The team works in a git worktree of this package on branch `lab/<start>/claude`, your current directory. When
 the time is up the branch ships only if it has commits, `agent/verify.sh` passes (`ruff`, `python -m pytest -q`,
 and every level's best route in `/app/working/cache/tas/levels.msgpack` still replaying from its own start, plus the
-full run from power-on once there is one, with your state machine through `python -m datenwissenschaften.tas.run verify`). Have the verifier run it before you stop. When
+full run from power-on once there is one, with your state machine through `python -m datenwissenschaften.speedrun.run verify`). Have the verifier run it before you stop. When
 the time is up with work the verifier has not passed, the run gets one short extension to finish and verify,
 never for new work. Never deploy, push or switch branches; change only this package.
 
@@ -71,6 +70,11 @@ Read these first, nothing else in full:
 - `/live/snapshot` → `metadata.speedrun`: the run's time, its segments, the level splits, the records and the
   state being searched now; `/app/working/cache/tas/search.log` for the search's own log.
 - `NOTES.md` and `notes/level<N>.md` (`## Now` header) for verified RAM and mechanics.
+- `knowledge.yaml`: what the AI has learned about the game, shown to viewers on the website's "What the AI
+  learned" page: mechanics, the player, enemies, power-ups, each level's goal, route and hazards, and the RAM
+  values found. Keep it in step with the notes: add every verified finding there in plain words for viewers,
+  and name sprites by the signature the engine's sprite catalog (`/live/snapshot` → `metadata.speedrun.sprites`)
+  shows, so the stream labels them.
 - The last report in `agent/reports/`.
 - `/app/working/cache/reference/`: `frames/<seconds>s.png` holds 4 frames per second of the video of the top
   human run on the game's speedrun.com board: the route humans take, how they beat each level, where the exits
@@ -126,7 +130,7 @@ Check the time with `date -u` at the start and before each step.
 Never expose secrets: no tokens, keys or `config.yaml` values in commits, reports, notes or Agent prompts.
 Never delete or edit the run's data under `/app/working`, never bump the engine version.
 Never commit secrets or ROMs. No `sudo`. Every commit passes `ruff check`, `ruff format` and `pytest`.
-Every shipped change restarts the search and costs it a turn of every level. Ship only what a probe measured
+Every shipped change restarts the search. Ship only what a probe measured
 and the search can use; otherwise write the finding to the notes and ship nothing.
 When a probe finds the inputs that lead out of a state, ship them as a hint in `hints.json`, which the search
 can use: `[{"state": "Level5Bell", "presses": [[44, ["DOWN"]], [1, ["DOWN", "A"]], [120, []]]}]`, each press

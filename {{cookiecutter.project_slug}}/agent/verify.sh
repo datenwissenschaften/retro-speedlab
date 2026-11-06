@@ -9,7 +9,7 @@ ruff format --check
 python -m pytest -q
 if [[ -f "${ROUTES}" ]]; then
     mkdir -p working/cache/tas
-    python -m datenwissenschaften.tas.run verify "${WRAPPER}" config.yaml "${ROUTES}"
+    python -m datenwissenschaften.speedrun.run verify "${WRAPPER}" config.yaml "${ROUTES}"
 else
     echo "verify: no level routes at ${ROUTES}; replay skipped" >&2
 fi

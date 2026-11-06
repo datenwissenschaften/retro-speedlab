@@ -36,7 +36,7 @@ integrate gets its integration in `integrations/{{ cookiecutter.game }}/`. Then 
 
 Check that a movie still replays with the package:
 
-    PYTHONPATH=. python -m datenwissenschaften.tas.run verify src.game.wrapper:GameWrapper config.yaml <progress.msgpack>
+    PYTHONPATH=. python -m datenwissenschaften.speedrun.run verify src.game.wrapper:GameWrapper config.yaml <progress.msgpack>
 
 With `upload.api_key` set, the search relays its live stream to the backend at `upload.url`; the website plays it at
 `https://www.retrospeedlab.com/stream?api_key=<stream key>`.
