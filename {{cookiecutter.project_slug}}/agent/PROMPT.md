@@ -114,6 +114,7 @@ Check the time with `date -u` at the start and before each step.
   RAM maps) and your own measurements in the emulator. Never use knowledge from earlier lab experiments, other
   copies of this package, caches, or this lab's own website, stream or reports.
 - Videos teach the route and the timing; never replay a run's inputs, they do not sync.
+- Never use tasvideos.org or anything taken from it: no TAS movies, submissions, forum posts, RAM maps or game resource pages.
 
 ## How to work
 

@@ -1,12 +1,21 @@
 {
   "permissions": {
-    "allow": ["Bash", "Read", "Edit", "Write", "Glob", "Grep"],
+    "allow": [
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep"
+    ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(git push:*)",
       "Bash(rm -rf /app:*)",
       "Edit(/app/working/**)",
-      "Write(/app/working/**)"
+      "Write(/app/working/**)",
+      "WebFetch(domain:tasvideos.org)",
+      "WebFetch(domain:www.tasvideos.org)"
     ]
   }
 }
